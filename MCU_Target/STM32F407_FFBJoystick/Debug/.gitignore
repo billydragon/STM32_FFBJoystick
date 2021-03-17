@@ -1,0 +1,8 @@
+/Core/
+/Drivers/
+/FFBJoystick/
+/USB/
+/makefile
+/objects.list
+/objects.mk
+/sources.mk
