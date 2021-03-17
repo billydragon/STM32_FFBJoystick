@@ -65,6 +65,16 @@ void MotorDriver::SetMotorOutput(int32_t * xy_forces)
 		ChangeMotoDriver();
 	}
 
+	if(config.SysConfig.AppConfig.Motor_Inv_X)
+	{
+		xy_forces[0] = ~xy_forces[0];
+	}
+
+	if(config.SysConfig.AppConfig.Motor_Inv_Y)
+		{
+			xy_forces[1] = ~xy_forces[1];
+		}
+
 	switch(CurrentMotorDriver)
 	{
 	case PWM_OUTPUT:

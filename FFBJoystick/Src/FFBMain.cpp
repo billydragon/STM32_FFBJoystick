@@ -30,20 +30,20 @@ NUM_OF_BUTTONS,
 		    true, true, false, // X and Y, Z Axis
 		    true, true, false, // Rx, Ry, or Rz
 		    false, false, // rudder or throttle
-		    false, false, false); // accelerator, brake, steering
+		    false, false, false) ; // accelerator, brake, steering
 
 
 
-Gains gain[2];
-EffectParams effects[2];
-int32_t xy_forces[2] = { 0 };
-TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS];
+Gains gain[2] __attribute__((section("ccmram")));
+EffectParams effects[2] __attribute__((section("ccmram")));
+int32_t xy_forces[2] __attribute__((section("ccmram"))) = { 0 };
+TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS] __attribute__((section("ccmram")));
 TDF_BUTTON Buttons[NUM_OF_BUTTONS];
-uint16_t adc_buff[NUM_OF_ADC_CHANNELS] = { 0 };
+uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
 
-FFBConfig config;
-QEncoder encoder;
-MotorDriver Motors;
+FFBConfig config __attribute__((section("ccmram")));
+QEncoder encoder __attribute__((section("ccmram")));
+MotorDriver Motors __attribute__((section("ccmram")));
 USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
 

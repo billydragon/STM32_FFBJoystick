@@ -13,10 +13,10 @@ extern FFBConfig config;
 
 TIM_HandleTypeDef *htim_X;
 TIM_HandleTypeDef *htim_Y;
-volatile int32_t pos_X = 0; // Extra position counter for overflows
-volatile int32_t pos_Y = 0; // Extra position counter for overflows
-volatile int32_t offset_X = 0;
-volatile int32_t offset_Y = 0;
+volatile int32_t pos_X __attribute__((section("ccmram"))); // Extra position counter for overflows
+volatile int32_t pos_Y __attribute__((section("ccmram"))); // Extra position counter for overflows
+volatile int32_t offset_X  __attribute__((section("ccmram")));
+volatile int32_t offset_Y __attribute__((section("ccmram")));
 
 QEncoder::QEncoder ()
 {

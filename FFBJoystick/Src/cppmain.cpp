@@ -83,8 +83,6 @@ void cppmain (void)
   while (1)
     {
 
-
-
       start_joystick ();
 
       HAL_Delay (1);
