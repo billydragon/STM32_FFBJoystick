@@ -11,9 +11,7 @@
 extern "C"
 {
 #endif
-
 #include "main.h"
-#include "stm32f4xx_hal.h"
 
 #define DEFAULT_VREF      3.3383
 #define DAC_MIN           512

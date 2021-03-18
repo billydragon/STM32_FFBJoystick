@@ -7,12 +7,13 @@
 
 #ifndef SRC_FFBCONFIG_H_
 #define SRC_FFBCONFIG_H_
+
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 #include "cppmain.h"
-#include "stm32f4_Flash.h"
+#include <stm32_Flash.h>
 #include "FFBConfig_DataType.h"
 
 #define CMD_WRITE_SYSCONFIG   0x10

@@ -1,6 +1,5 @@
-#include "stm32f4_Flash.h"
-#include "stm32f4xx_hal_flash_ex.h"
 #include <stdio.h>
+#include <stm32_Flash.h>
 #include "main.h"
 
 static uint32_t
@@ -104,8 +103,8 @@ Flash_EraseSector (uint32_t start_Add, uint32_t end_Add)
   FLASH_EraseInitTypeDef pEraseInit;
 
   HAL_FLASH_Unlock ();
-  __HAL_FLASH_CLEAR_FLAG(
-      FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
+  //__HAL_FLASH_CLEAR_FLAG(
+  //    FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR | FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
   //  FLASH_EraseSector(SectorNum, FLASH_VOLTAGE_RANGE_3);
 
   /* Get the sector where start the user flash area */
@@ -143,14 +142,14 @@ Flash_Write32BitDatas (uint32_t address, uint16_t length, int32_t *data_32)
   FLASH_EraseInitTypeDef pEraseInit;
 
   HAL_FLASH_Unlock ();
-  __HAL_FLASH_DATA_CACHE_DISABLE();
-  __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
+  //__HAL_FLASH_DATA_CACHE_DISABLE();
+  //__HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
 
-  __HAL_FLASH_DATA_CACHE_RESET();
-  __HAL_FLASH_INSTRUCTION_CACHE_RESET();
+ // __HAL_FLASH_DATA_CACHE_RESET();
+  //__HAL_FLASH_INSTRUCTION_CACHE_RESET();
 
-  __HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
-  __HAL_FLASH_DATA_CACHE_ENABLE();
+  //__HAL_FLASH_INSTRUCTION_CACHE_ENABLE();
+  //__HAL_FLASH_DATA_CACHE_ENABLE();
   //__HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
   //FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
 
@@ -223,6 +222,7 @@ Flash_Write16BitDatas (uint32_t address, uint16_t length, int16_t *data_16)
   FLASH_EraseInitTypeDef pEraseInit;
 
   HAL_FLASH_Unlock ();
+  /*
   __HAL_FLASH_DATA_CACHE_DISABLE();
   __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
 
@@ -233,7 +233,7 @@ Flash_Write16BitDatas (uint32_t address, uint16_t length, int16_t *data_16)
   __HAL_FLASH_DATA_CACHE_ENABLE();
   //__HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
   //FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
-
+	*/
   /* Get the sector where start the user flash area */
   UserStartSector = Flash_GetSector (address);
   pEraseInit.TypeErase = TYPEERASE_SECTORS;
@@ -303,6 +303,8 @@ void Flash_Write8BitDatas (uint32_t address, uint16_t length, int8_t *data_8)
   FLASH_EraseInitTypeDef pEraseInit;
 
   HAL_FLASH_Unlock ();
+
+  /*
   __HAL_FLASH_DATA_CACHE_DISABLE();
   __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
 
@@ -313,7 +315,7 @@ void Flash_Write8BitDatas (uint32_t address, uint16_t length, int8_t *data_8)
   __HAL_FLASH_DATA_CACHE_ENABLE();
   //__HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
   //FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
-
+	*/
   /* Get the sector where start the user flash area */
   UserStartSector = Flash_GetSector (address);
   pEraseInit.TypeErase = TYPEERASE_SECTORS;
@@ -380,6 +382,7 @@ void Flash_WriteByte (uint32_t address, int8_t data_8)
   FLASH_EraseInitTypeDef pEraseInit;
 
   HAL_FLASH_Unlock ();
+  /*
   __HAL_FLASH_DATA_CACHE_DISABLE();
   __HAL_FLASH_INSTRUCTION_CACHE_DISABLE();
 
@@ -390,6 +393,7 @@ void Flash_WriteByte (uint32_t address, int8_t data_8)
   __HAL_FLASH_DATA_CACHE_ENABLE();
   //__HAL_FLASH_CLEAR_FLAG(FLASH_FLAG_EOP | FLASH_FLAG_OPERR | FLASH_FLAG_WRPERR |
   //FLASH_FLAG_PGAERR | FLASH_FLAG_PGPERR | FLASH_FLAG_PGSERR);
+	*/
 
   /* Get the sector where start the user flash area */
   UserStartSector = Flash_GetSector (address);

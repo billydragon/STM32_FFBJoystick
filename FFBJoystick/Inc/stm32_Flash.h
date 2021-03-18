@@ -5,18 +5,17 @@
  *      Author: billy
  */
 
-#ifndef INC_STM32F4_FLASH_H_
-#define INC_STM32F4_FLASH_H_
+#ifndef INC_STM32_FLASH_H_
+#define INC_STM32_FLASH_H_
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
 #include <stdint.h>
-#include "stm32f4xx.h"
+#include "main.h"
 
-#include <stdint.h>
-#include "stm32f4xx.h"
+//#include "stm32f4xx.h"
 
 #define ADDR_FLASH_SECTOR_0     ((uint32_t)0x08000000) /* Base @ of Sector 0, 16 Kbyte */
 #define ADDR_FLASH_SECTOR_1     ((uint32_t)0x08004000) /* Base @ of Sector 1, 16 Kbyte */
@@ -34,28 +33,18 @@ extern "C"
 #define FLASH_USER_START_ADDR ADDR_FLASH_SECTOR_1
 #define FLASH_USER_END_ADDR ADDR_FLASH_SECTOR_3
 
-  void
-  Flash_EraseSector (uint32_t start_Add, uint32_t end_Add);
-  void
-  Flash_User_Data (uint32_t start_Add, uint32_t end_Add);
-  void
-  Flash_Write32BitDatas (uint32_t address, uint16_t length, int32_t *data_32);
-  void
-  Flash_Read32BitDatas (uint32_t address, uint16_t length, int32_t *data_32);
-  void
-  Flash_Write16BitDatas (uint32_t address, uint16_t length, int16_t *data_16);
-  void
-  Flash_Read16BitDatas (uint32_t address, uint16_t length, int16_t *data_16);
-  void
-  Flash_Write8BitDatas (uint32_t address, uint16_t length, int8_t *data_8);
-  void
-  Flash_Read8BitDatas (uint32_t address, uint16_t length, int8_t *data_8);
-  void
-  Flash_WriteByte (uint32_t address, int8_t data_8);
-  int8_t
-  Flash_ReadByte (uint32_t address);
+  void Flash_EraseSector (uint32_t start_Add, uint32_t end_Add);
+  void Flash_User_Data (uint32_t start_Add, uint32_t end_Add);
+  void Flash_Write32BitDatas (uint32_t address, uint16_t length, int32_t *data_32);
+  void Flash_Read32BitDatas (uint32_t address, uint16_t length, int32_t *data_32);
+  void Flash_Write16BitDatas (uint32_t address, uint16_t length, int16_t *data_16);
+  void Flash_Read16BitDatas (uint32_t address, uint16_t length, int16_t *data_16);
+  void Flash_Write8BitDatas (uint32_t address, uint16_t length, int8_t *data_8);
+  void Flash_Read8BitDatas (uint32_t address, uint16_t length, int8_t *data_8);
+  void Flash_WriteByte (uint32_t address, int8_t data_8);
+  int8_t Flash_ReadByte (uint32_t address);
 
 #ifdef __cplusplus
 }
 #endif
-#endif /* INC_STM32F4_FLASH_H_ */
+#endif /* INC_STM32_FLASH_H_ */

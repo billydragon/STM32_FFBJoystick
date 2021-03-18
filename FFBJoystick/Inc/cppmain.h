@@ -49,8 +49,7 @@ extern "C"
 #include "types.h"
 #include "usb_device.h"
 #include "usbd_def.h"
-#include "stm32f4xx.h"
-#include "stm32f4xx_hal.h"
+
 
 	extern uint8_t * JoystickHIDReportDescr;
 	extern uint16_t  JoystickHIDReportDescr_Size;

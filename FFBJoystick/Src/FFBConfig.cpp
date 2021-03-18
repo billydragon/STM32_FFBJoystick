@@ -8,9 +8,8 @@
 #include "FFBConfig.h"
 #include "cppmain.h"
 #include "usbd_joystick_hid_if.h"
-#include "stm32f4_Flash.h"
+#include "stm32_Flash.h"
 
-//#include "MotorPWM.h"
 
 #define CURRENT_HW_VERSION		100
 #define CURRENT_SW_VERSION		100

@@ -14,6 +14,20 @@
 #include "MotorDriver.h"
 #include "PID_v2.h"
 
+
+Gains gain[2] __attribute__((section("ccmram")));
+EffectParams effects[2]  __attribute__((section("ccmram")));
+int32_t xy_forces[2]  __attribute__((section("ccmram"))) = { 0 };
+TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS]  __attribute__((section("ccmram")));
+FFBConfig config  __attribute__((section("ccmram")));
+QEncoder encoder  __attribute__((section("ccmram")));
+MotorDriver Motors  __attribute__((section("ccmram")));
+
+TDF_BUTTON Buttons[NUM_OF_BUTTONS];
+uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
+USB_LoggerReport_t USBLog;
+uint32_t USBLog_timer =0;
+
 double Setpoint[2], Input[2], Output[2];
 //double Kp=2, Ki=5, Kd=1;
 //double aggKp=4, aggKi=0.2, aggKd=1;
@@ -24,28 +38,11 @@ double Setpoint[2], Input[2], Output[2];
 PID  myPID[2] = {PID(&Input[X_AXIS], &Output[X_AXIS], &Setpoint[X_AXIS], Kp[X_AXIS], Ki[X_AXIS], Kd[X_AXIS], DIRECT),
                 PID(&Input[Y_AXIS], &Output[Y_AXIS], &Setpoint[Y_AXIS], Kp[Y_AXIS], Ki[Y_AXIS], Kd[Y_AXIS], DIRECT)};
 
-Joystick_ Joystick (JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK,
-NUM_OF_BUTTONS,
-		    NUM_OF_HATSWITCH, // Button Count, Hat Switch Count
-		    true, true, false, // X and Y, Z Axis
-		    true, true, false, // Rx, Ry, or Rz
-		    false, false, // rudder or throttle
-		    false, false, false) ; // accelerator, brake, steering
-
-
-
-Gains gain[2] __attribute__((section("ccmram")));
-EffectParams effects[2] __attribute__((section("ccmram")));
-int32_t xy_forces[2] __attribute__((section("ccmram"))) = { 0 };
-TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS] __attribute__((section("ccmram")));
-TDF_BUTTON Buttons[NUM_OF_BUTTONS];
-uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
-
-FFBConfig config __attribute__((section("ccmram")));
-QEncoder encoder __attribute__((section("ccmram")));
-MotorDriver Motors __attribute__((section("ccmram")));
-USB_LoggerReport_t USBLog;
-uint32_t USBLog_timer =0;
+Joystick_ Joystick (JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK, NUM_OF_BUTTONS, NUM_OF_HATSWITCH,
+						true, true, false, // X and Y, Z Axis
+						true, true, false, // Rx, Ry, or Rz
+						false, false, // rudder or throttle
+						false, false, false) ; // accelerator, brake, steering
 
 
 void Set_PID_Turnings()
@@ -213,6 +210,7 @@ void start_joystick ()
 		  USBLog.axis_max[0] = encoder.axis[X_AXIS].maxValue;
 		  USBLog.axis_min[1] = encoder.axis[Y_AXIS].minValue;
 		  USBLog.axis_max[1] = encoder.axis[Y_AXIS].maxValue;
+
 		  uint8_t fReport[USBD_CUSTOMHID_INREPORT_BUF_SIZE] = { 0 };
 		  uint8_t offset = 0;
 		  memcpy (&fReport[offset], (uint8_t*)&USBLog, sizeof(USB_LoggerReport_t));

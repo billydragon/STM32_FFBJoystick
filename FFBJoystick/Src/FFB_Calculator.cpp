@@ -11,6 +11,10 @@
 #include "filters.h"
 #include "FFBConfig.h"
 
+
+#define FRICTION_SATURATION 32767
+#define INERTIA_SATURATION 32767
+
 const float cutoff_freq_damper = 5.0;  //Cutoff frequency in Hz
 const float sampling_time_damper = 0.001; //Sampling time in seconds.
 IIR::ORDER order = IIR::ORDER::OD1; // Order (OD1 to OD4)
@@ -26,6 +30,7 @@ Gains *m_gains;
 
 //force feedback effect params
 EffectParams *m_effect_params;
+
 
 void setFilterParameter()
 {
@@ -65,6 +70,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
          }
       else
          {
+
       	      condition = 0; // only one Condition Parameter Block is defined
       	 }
     }
@@ -74,7 +80,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
       condition = axis;
     }
 
-  float angle = (direction * 360.0 / 255.0) * DEG_TO_RAD;
+  float angle = ((float)direction * 360.0 / 255.0) * DEG_TO_RAD;
   float angle_ratio = axis == 0 ? sin (angle) : -1 * cos (angle);
 
   int32_t force = 0;
@@ -120,6 +126,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_INERTIA: //10
+
 		  	if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
 			{
 		  			force = ConditionForceCalculator (effect,abs( NormalizeRange (_effect_params.inertiaAcceleration,
@@ -137,12 +144,14 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_FRICTION: //11
-			  force = ConditionForceCalculator (effect, NormalizeRange (_effect_params.frictionPositionChange,
-												  _effect_params.frictionMaxPositionChange), condition) * _gains.frictionGain;
 
-				if (useForceDirectionForConditionEffect) {
-					force *= angle_ratio;
-				}
+    		force = ConditionForceCalculator(effect, NormalizeRange(_effect_params.frictionPositionChange,
+    										_effect_params.frictionMaxPositionChange), condition) * _gains.frictionGain;
+
+			if (useForceDirectionForConditionEffect)
+			{
+				force *= angle_ratio;
+			}
       break;
     case USB_EFFECT_CUSTOM: //12
       break;
@@ -186,10 +195,12 @@ void forceCalculator (int32_t *forces)
 
 int32_t ConstantForceCalculator (volatile TEffectState &effect)
 {
+
   float tempforce = (float) effect.magnitude * effect.gain / 255;
   //tempforce = map(tempforce, -10000, 10000, -255, 255);			//DAC resulusion 16 bit - remove this
   tempforce = map(tempforce, -10000, 10000, -32767, 32767);
   return (int32_t) tempforce;
+
 }
 
 int32_t RampForceCalculator (volatile TEffectState &effect)
@@ -325,8 +336,8 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric,
       tempForce = (metric - (float) 1.00 * (cpOffset - deadBand) / 10000)
 	  * negativeCoefficient;
       // tempForce = ((float)1.00 * (cpOffset - deadBand) / 10000 - metric) * negativeCoefficient;
-      tempForce = (
-	  tempForce < -negativeSaturation ? -negativeSaturation : tempForce); // I dont know why negativeSaturation = 55536.00 after negativeSaturation = -effect.negativeSaturation;
+      // I dont know why negativeSaturation = 55536.00 after negativeSaturation = -effect.negativeSaturation;
+      tempForce = (tempForce < -negativeSaturation ? -negativeSaturation : tempForce);
       // tempForce = (tempForce < (-effect.negativeCoefficient) ? (-effect.negativeCoefficient) : tempForce);
     }
   else if (metric > (cpOffset + deadBand))
