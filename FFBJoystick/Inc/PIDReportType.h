@@ -7,8 +7,9 @@
 
 #ifndef INC_PIDREPORTTYPE_H_
 #define INC_PIDREPORTTYPE_H_
+#include "cppmain.h"
+#include <stdbool.h>
 
-#include "stdint.h"
 
 #define MAX_EFFECTS 40
 #define FFB_ID_OFFSET 0x00
@@ -366,6 +367,7 @@ typedef struct
   uint16_t period; // 0..32767 ms
   uint16_t duration, fadeTime, attackTime, elapsedTime;
   uint64_t startTime;
-} __attribute__((packed)) TEffectState;
+  bool useEnvelope;
+} TEffectState;
 
 #endif /* INC_PIDREPORTTYPE_H_ */

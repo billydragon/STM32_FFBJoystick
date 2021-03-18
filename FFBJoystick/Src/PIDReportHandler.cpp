@@ -213,6 +213,7 @@ void PIDReportHandler::SetEnvelope (USB_FFBReport_SetEnvelope_Output_Data_t *dat
   effect->fadeLevel = data->fadeLevel;
   effect->attackTime = data->attackTime;
   effect->fadeTime = data->fadeTime;
+  effect->useEnvelope = true;
 }
 
 void PIDReportHandler::SetCondition (USB_FFBReport_SetCondition_Output_Data_t *data,

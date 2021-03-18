@@ -24,7 +24,7 @@ class ACServo
 		virtual ~ACServo();
 	private:
 		bool active = false;
-
+		int32_t Voltage_Convert(float voltage);
 	};
 
 #endif /* SRC_ACSERVO_H_ */
