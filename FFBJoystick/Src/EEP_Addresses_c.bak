@@ -1,0 +1,22 @@
+/*
+ * EEP_Addresses.c
+ *
+ *  Created on: Mar 19, 2021
+ *      Author: billy
+ */
+#include "EEP_Addresses.h"
+
+
+
+uint16_t VirtAddVarTab[NB_OF_VAR] =
+	{
+			ADDR_DEFAULT_INIT_FLAG,
+			ADDR_SYSTEM_CONFIG,
+			ADDR_SYSTEM_DATA_AX_MIN,
+			ADDR_SYSTEM_DATA_AX_MAX,
+			ADDR_SYSTEM_DATA_AY_MIN,
+			ADDR_SYSTEM_DATA_AY_MAX
+	};
+
+
+

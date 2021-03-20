@@ -134,8 +134,8 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_INERTIA: //10
-    			effect.conditions[axis].negativeSaturation = INERTIA_SATURATION;
-    			effect.conditions[axis].positiveSaturation = INERTIA_SATURATION;
+    			//effect.conditions[axis].negativeSaturation = INERTIA_SATURATION;
+    			//effect.conditions[axis].positiveSaturation = INERTIA_SATURATION;
 		  	if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
 			{
 		  			force = ConditionForceCalculator (effect,abs( NormalizeRange (_effect_params.inertiaAcceleration,
@@ -153,8 +153,8 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_FRICTION: //11
-    			effect.conditions[axis].negativeSaturation = FRICTION_SATURATION;
-    			effect.conditions[axis].positiveSaturation = FRICTION_SATURATION;
+    			//effect.conditions[axis].negativeSaturation = FRICTION_SATURATION;
+    			//effect.conditions[axis].positiveSaturation = FRICTION_SATURATION;
     		force = ConditionForceCalculator(effect, NormalizeRange(_effect_params.frictionPositionChange,
     										_effect_params.frictionMaxPositionChange), condition) * _gains.frictionGain;
 

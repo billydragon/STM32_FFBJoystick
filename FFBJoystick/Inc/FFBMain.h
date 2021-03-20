@@ -60,8 +60,8 @@ extern "C"
 #define ENCODER_MAX			 	1000000 		//-32767
 #define ENCODER_MIN			  	-1000000		//32767
 
-#define DIGITAL_AXIS_MIN		-32767
-#define DIGITAL_AXIS_MAX		32767
+#define DIGITAL_AXIS_MIN		-10000
+#define DIGITAL_AXIS_MAX		 10000
 
 #define ADC_AXIS_MIN			 -2047
 #define ADC_AXIS_MAX			 2047
@@ -98,6 +98,8 @@ typedef struct //PID state
   void Set_PID_Turnings();
   void AutoCalibration(uint8_t idx);
   void gotoPosition(int axis_num, int32_t targetPosition);
+  void findCenter(int axis_num);
+
 
 
 #endif /* INC_FFBMAIN_H_ */

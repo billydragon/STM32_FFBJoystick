@@ -13,6 +13,7 @@
 #include "FFBConfig.h"
 #include "MotorDriver.h"
 #include "PID_v2.h"
+#include "types.h"
 
 
 Gains gain[2] __attribute__((section("ccmram")));
@@ -27,6 +28,7 @@ TDF_BUTTON Buttons[NUM_OF_BUTTONS];
 uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
 USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
+bool RunFirstTime = true;
 
 double Setpoint[2], Input[2], Output[2];
 //double Kp=2, Ki=5, Kd=1;
@@ -47,6 +49,7 @@ Joystick_ Joystick (JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK, NUM_OF_B
 
 void Set_PID_Turnings()
 {
+	float temp_outputlimit = 0;
 
   for(int ax =0; ax <2 ; ax++)
   {
@@ -55,7 +58,10 @@ void Set_PID_Turnings()
   Kd[ax] = config.SysConfig.Pid[ax].Kd;
   myPID[ax].SetTunings(Kp[ax],Ki[ax],Kd[ax]);
   myPID[ax].SetSampleTime(config.SysConfig.Pid[ax].SampleTime);
-  myPID[ax].SetOutputLimits(-config.SysConfig.Pid[ax].MaxOutput, config.SysConfig.Pid[ax].MaxOutput);
+  temp_outputlimit = (config.SysConfig.Pid[ax].MaxOutput * 32767) / 100;
+  temp_outputlimit =  constrain(temp_outputlimit, 0,32767);
+  myPID[ax].SetOutputLimits(-temp_outputlimit, temp_outputlimit);
+  myPID[ax].SetMode(AUTOMATIC);
   }
 
 }
@@ -97,7 +103,12 @@ void init_Joystick ()
 
 void start_joystick ()
 {
-	Set_PID_Turnings();
+
+	if((config.SysConfig.AppConfig.Auto_Calibration ==1) && (RunFirstTime == true))
+	{
+		findCenter(X_AXIS);
+		RunFirstTime = false;
+	}
 
   for (int i = 0; i < NUM_OF_BUTTONS; i++)
     {
@@ -279,29 +290,44 @@ void findCenter(int axis_num)
 
   int32_t LastPos=0, Axis_Center=0 ,Axis_Range=0;
   int32_t MotorOut[2] = {0,0};
+  uint32_t LedBlinkTime = HAL_GetTick();
+
   encoder.axis[axis_num].minValue =0;
   encoder.axis[axis_num].maxValue =0;
   encoder.setPos(axis_num, 0);
-  while (Buttons[0].CurrentState)
+  printf("Starting find center...\n");
+  while (Buttons[0].CurrentState == 0)
   {
+	if(( HAL_GetTick() - LedBlinkTime) > 500)
+	{
+		if(axis_num == X_AXIS)
+		 HAL_GPIO_TogglePin(GPIOD, LED2_Pin);
+		else if(axis_num == Y_AXIS)
+		 HAL_GPIO_TogglePin(GPIOD, LED4_Pin);
+
+		LedBlinkTime = HAL_GetTick();
+	}
+
     encoder.updatePosition(axis_num);
     if(LastPos != encoder.axis[axis_num].currentPosition)
     {
 		AutoCalibration(axis_num);
 		LastPos = encoder.axis[axis_num].currentPosition;
 		#ifdef DEBUG
-			printf("[%d]: %ld,%ld", axis_num, encoder.axis[axis_num].minValue, encoder.axis[axis_num].maxValue);
+			printf("[%d]: %ld,%ld\n", axis_num, encoder.axis[axis_num].minValue, encoder.axis[axis_num].maxValue);
 
 		#endif
     }
 
   }
+  HAL_GPIO_WritePin(GPIOD, LED2_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOD, LED4_Pin, GPIO_PIN_RESET);
 
     Axis_Center= (encoder.axis[axis_num].minValue + encoder.axis[axis_num].maxValue)/2;
     Axis_Range =  abs(encoder.axis[axis_num].minValue) + abs(encoder.axis[axis_num].maxValue);
 
     #ifdef DEBUG
-    printf("[%d]: %ld - 0 - %ld", axis_num, encoder.axis[axis_num].minValue, encoder.axis[axis_num].maxValue);
+    printf("[%d]: %ld - 0 - %ld\n", axis_num, encoder.axis[axis_num].minValue, encoder.axis[axis_num].maxValue);
 
     #endif
 
@@ -329,34 +355,51 @@ void findCenter(int axis_num)
 			default:
 				break;
 		}
-
+    HAL_GPIO_WritePin(GPIOD, LED3_Pin, GPIO_PIN_RESET);
+    HAL_GPIO_WritePin(GPIOD, LED1_Pin, GPIO_PIN_RESET);
 }
 
 
 void gotoPosition(int axis_num, int32_t targetPosition) {
   int32_t LastPos=0;
   int32_t MotorOut[2] = {0,0};
+  printf("Goto center...\n");
+  Set_PID_Turnings();
   Setpoint[axis_num] = targetPosition;
-  while (encoder.axis[axis_num].currentPosition != targetPosition) {
+  while (encoder.axis[axis_num].currentPosition != targetPosition)
+  {
     Setpoint[axis_num] = targetPosition;
     encoder.updatePosition(axis_num);
     Input[axis_num] = encoder.axis[axis_num].currentPosition ;
     myPID[axis_num].Compute();
-    MotorOut[axis_num] = -Output[axis_num];
-    Motors.SetMotorOutput(MotorOut);
+    if(encoder.axis[axis_num].currentPosition < targetPosition)
+    {
+    	HAL_GPIO_WritePin(GPIOD, LED3_Pin, GPIO_PIN_SET);
+    	HAL_GPIO_WritePin(GPIOD, LED1_Pin, GPIO_PIN_RESET);
 
-    CalculateMaxSpeedAndMaxAcceleration();
+    }
+    else if (encoder.axis[axis_num].currentPosition > targetPosition)
+    {
+    	HAL_GPIO_WritePin(GPIOD, LED3_Pin, GPIO_PIN_RESET);
+    	HAL_GPIO_WritePin(GPIOD, LED1_Pin, GPIO_PIN_SET);
+    }
+
+
+
+    MotorOut[axis_num] = Output[axis_num];
+    Motors.SetMotorOutput(MotorOut);
 
     #ifdef DEBUG
     if (LastPos !=encoder.axis[axis_num].currentPosition )
     {
-    printf("[%d] P: %ld,T: %ld,F: %d",axis_num,encoder.axis[axis_num].currentPosition, (int32_t)Setpoint[axis_num], (int)Output[axis_num]);
+    printf("[%d] P: %ld,T: %ld,F: %ld\n",axis_num,encoder.axis[axis_num].currentPosition, (int32_t)Setpoint[axis_num], MotorOut[axis_num]);
 
     LastPos = encoder.axis[axis_num].currentPosition;
     }
     #endif
 
   }
+  printf("Find center Done.\n");
 
 }
 

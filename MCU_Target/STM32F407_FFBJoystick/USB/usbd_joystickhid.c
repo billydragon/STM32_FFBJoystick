@@ -1131,22 +1131,22 @@ static uint8_t
 USBD_JOYSTICK_HID_EP0_RxReady (USBD_HandleTypeDef *pdev)
 {
   USBD_HID_HandleTypeDef *hhid = (USBD_HID_HandleTypeDef*) pdev->pClassData;
-  USBD_SetupReqTypedef req = (USBD_SetupReqTypedef) pdev->request;
+  USBD_SetupReqTypedef *req = (USBD_SetupReqTypedef *) &pdev->request;
 
   //memset(hhid->Joyctick_buf,0,USBD_JOYSTICKHID_OUTREPORT_BUF_SIZE);
   if (hhid->IsReportAvailable == 1U)
     {
 
-      switch (req.wIndex)
+      switch (req->wIndex)
 	{
 	case 0:
 
 	  ((USBD_COMPOSITE_HID_ItfTypeDef*) pdev->pUserData)->SetFeature (
-	      req.wValue, hhid->Joyctick_buf, req.wLength, req.wIndex);
+	      req->wValue, hhid->Joyctick_buf, req->wLength, req->wIndex);
 	  break;
 	case 1:
 	  ((USBD_COMPOSITE_HID_ItfTypeDef*) pdev->pUserData)->SetFeature (
-	      req.wValue, hhid->CustomHid_buf, req.wLength, req.wIndex);
+	      req->wValue, hhid->CustomHid_buf, req->wLength, req->wIndex);
 	  break;
 	default:
 	  break;
