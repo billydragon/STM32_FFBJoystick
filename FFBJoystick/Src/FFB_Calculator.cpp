@@ -134,8 +134,8 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_INERTIA: //10
-    			//effect.conditions[axis].negativeSaturation = INERTIA_SATURATION;
-    			//effect.conditions[axis].positiveSaturation = INERTIA_SATURATION;
+    			effect.conditions[axis].negativeSaturation = INERTIA_SATURATION;
+    			effect.conditions[axis].positiveSaturation = INERTIA_SATURATION;
 		  	if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
 			{
 		  			force = ConditionForceCalculator (effect,abs( NormalizeRange (_effect_params.inertiaAcceleration,
@@ -153,8 +153,8 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_FRICTION: //11
-    			//effect.conditions[axis].negativeSaturation = FRICTION_SATURATION;
-    			//effect.conditions[axis].positiveSaturation = FRICTION_SATURATION;
+    			effect.conditions[axis].negativeSaturation = FRICTION_SATURATION;
+    			effect.conditions[axis].positiveSaturation = FRICTION_SATURATION;
     		force = ConditionForceCalculator(effect, NormalizeRange(_effect_params.frictionPositionChange,
     										_effect_params.frictionMaxPositionChange), condition) * _gains.frictionGain;
 
@@ -344,16 +344,16 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, u
 
   if (metric < (cpOffset - deadBand))
     {
-      tempForce = (metric - (float) 1.00 * (cpOffset - deadBand) / 10000)
-	  * negativeCoefficient;
-      // tempForce = ((float)1.00 * (cpOffset - deadBand) / 10000 - metric) * negativeCoefficient;
-      // I dont know why negativeSaturation = 55536.00 after negativeSaturation = -effect.negativeSaturation;
+      //tempForce = (metric - (float) 1.00 * (cpOffset - deadBand) / 10000) * negativeCoefficient;
+
+      tempForce = (metric - (float) 0.4f * (cpOffset - deadBand)) * negativeCoefficient;
       tempForce = (tempForce < -negativeSaturation ? -negativeSaturation : tempForce);
-      // tempForce = (tempForce < (-effect.negativeCoefficient) ? (-effect.negativeCoefficient) : tempForce);
+
     }
   else if (metric > (cpOffset + deadBand))
     {
-      tempForce = (metric - (float) 1.00 * (cpOffset + deadBand) / 10000) * positiveCoefficient;
+      //tempForce = (metric - (float) 1.00 * (cpOffset + deadBand) / 10000) * positiveCoefficient;
+      tempForce = (metric - (float) 0.40f * (cpOffset + deadBand)) * positiveCoefficient;
       tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
     }
 	  //else return 0;
