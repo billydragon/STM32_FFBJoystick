@@ -19,6 +19,7 @@ extern "C"
 #define CMD_WRITE_SYSCONFIG   0x10
 #define CMD_UPDATE_SYSCONFIG  0x11
 #define CMD_RESET_SYSCONFIG   0x12
+#define CMD_FINDCENTER		  0x13
 
 #define FLASH_START_BASE		FLASH_USER_START_ADDR
 #define ADDR_FW_VERSION			FLASH_USER_START_ADDR + 0
@@ -39,11 +40,10 @@ extern "C"
     uint8_t* GetSysConfig ();
     void Host_To_Dev_SetFeature (uint8_t *buff);
     FFBConfig ();
-    virtual
-    ~FFBConfig ();
+    virtual ~FFBConfig ();
   private:
-    void
-    Set_Default_config ();
+    void Set_Default_config ();
+    bool Check_Recv_CRC(uint8_t *buff);
 
   };
 

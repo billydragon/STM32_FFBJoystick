@@ -210,25 +210,31 @@ void start_joystick ()
 
   Motors.SetMotorOutput(xy_forces);
 
+  Send_Debug_Report();
+
+}
+
+void Send_Debug_Report()
+{
 	if(micros()- USBLog_timer > USBLOG_INTERVAL)
-	{
+		{
 
-		  USBLog.xy_forces[0] = xy_forces[0];
-		  USBLog.xy_forces[1] = xy_forces[1];
-		  USBLog.current_pos[0] = constrain(encoder.axis[X_AXIS].currentPosition, encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
-		  USBLog.current_pos[1] = constrain(encoder.axis[Y_AXIS].currentPosition, encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
-		  USBLog.axis_min[0] = encoder.axis[X_AXIS].minValue;
-		  USBLog.axis_max[0] = encoder.axis[X_AXIS].maxValue;
-		  USBLog.axis_min[1] = encoder.axis[Y_AXIS].minValue;
-		  USBLog.axis_max[1] = encoder.axis[Y_AXIS].maxValue;
+			  USBLog.xy_forces[0] = xy_forces[0];
+			  USBLog.xy_forces[1] = xy_forces[1];
+			  USBLog.current_pos[0] = constrain(encoder.axis[X_AXIS].currentPosition, encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
+			  USBLog.current_pos[1] = constrain(encoder.axis[Y_AXIS].currentPosition, encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
+			  USBLog.axis_min[0] = encoder.axis[X_AXIS].minValue;
+			  USBLog.axis_max[0] = encoder.axis[X_AXIS].maxValue;
+			  USBLog.axis_min[1] = encoder.axis[Y_AXIS].minValue;
+			  USBLog.axis_max[1] = encoder.axis[Y_AXIS].maxValue;
 
-		  uint8_t fReport[USBD_CUSTOMHID_INREPORT_BUF_SIZE] = { 0 };
-		  uint8_t offset = 0;
-		  memcpy (&fReport[offset], (uint8_t*)&USBLog, sizeof(USB_LoggerReport_t));
+			  uint8_t fReport[USBD_CUSTOMHID_INREPORT_BUF_SIZE] = { 0 };
+			  uint8_t offset = 0;
+			  memcpy (&fReport[offset], (uint8_t*)&USBLog, sizeof(USB_LoggerReport_t));
 
-		  USBD_CUSTOM_HID_SendReport_FS (fReport, sizeof(fReport));
-		  USBLog_timer = micros();
-	}
+			  USBD_CUSTOM_HID_SendReport_FS (fReport, sizeof(fReport));
+			  USBLog_timer = micros();
+		}
 
 
 }
@@ -271,6 +277,11 @@ void Set_Gains ()
   setGains (gain);
 }
 
+void Set_RunFirstTime_state(bool state)
+{
+	RunFirstTime = state;
+
+}
 void AutoCalibration(uint8_t idx)
 {
 
@@ -289,13 +300,21 @@ void findCenter(int axis_num)
 {
 
   int32_t LastPos=0, Axis_Center=0 ,Axis_Range=0;
-  int32_t MotorOut[2] = {0,0};
+  //int32_t MotorOut[2] = {0,0};
+  xy_forces[X_AXIS] = 0;
+  xy_forces[Y_AXIS] = 0;
   uint32_t LedBlinkTime = HAL_GetTick();
+
+  Motors.SetMotorOutput(xy_forces);
+  Motors.MotorDriverOff(X_AXIS);
+  Motors.MotorDriverOff(Y_AXIS);
 
   encoder.axis[axis_num].minValue =0;
   encoder.axis[axis_num].maxValue =0;
   encoder.setPos(axis_num, 0);
   printf("Starting find center...\n");
+  Motors.MotorDriverOn(X_AXIS);
+  Motors.MotorDriverOn(Y_AXIS);
   while (Buttons[0].CurrentState == 0)
   {
 	if(( HAL_GetTick() - LedBlinkTime) > 500)
@@ -313,12 +332,13 @@ void findCenter(int axis_num)
     {
 		AutoCalibration(axis_num);
 		LastPos = encoder.axis[axis_num].currentPosition;
+
 		#ifdef DEBUG
 			printf("[%d]: %ld,%ld\n", axis_num, encoder.axis[axis_num].minValue, encoder.axis[axis_num].maxValue);
 
 		#endif
     }
-
+    Send_Debug_Report();
   }
   HAL_GPIO_WritePin(GPIOD, LED2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOD, LED4_Pin, GPIO_PIN_RESET);
@@ -341,7 +361,7 @@ void findCenter(int axis_num)
 				encoder.axis[X_AXIS].minValue = -encoder.axis[X_AXIS].maxValue;
 				Joystick.setXAxisRange(encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
 				Joystick.setXAxis(encoder.axis[X_AXIS].currentPosition);
-				Motors.SetMotorOutput(MotorOut);
+				Motors.SetMotorOutput(xy_forces);
 				break;
 			case Y_AXIS:
 				gotoPosition(Y_AXIS, Axis_Center);    //goto center X
@@ -350,7 +370,7 @@ void findCenter(int axis_num)
 				encoder.axis[Y_AXIS].minValue = -encoder.axis[Y_AXIS].maxValue;
 				Joystick.setYAxisRange(encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
 				Joystick.setYAxis(encoder.axis[Y_AXIS].currentPosition);
-				Motors.SetMotorOutput(MotorOut);
+				Motors.SetMotorOutput(xy_forces);
 				break;
 			default:
 				break;
@@ -362,7 +382,9 @@ void findCenter(int axis_num)
 
 void gotoPosition(int axis_num, int32_t targetPosition) {
   int32_t LastPos=0;
-  int32_t MotorOut[2] = {0,0};
+  //int32_t MotorOut[2] = {0,0};
+  xy_forces[X_AXIS] = 0;
+  xy_forces[Y_AXIS] = 0;
   printf("Goto center...\n");
   Set_PID_Turnings();
   Setpoint[axis_num] = targetPosition;
@@ -386,18 +408,18 @@ void gotoPosition(int axis_num, int32_t targetPosition) {
 
 
 
-    MotorOut[axis_num] = Output[axis_num];
-    Motors.SetMotorOutput(MotorOut);
+    xy_forces[axis_num] = Output[axis_num];
+    Motors.SetMotorOutput(xy_forces);
 
     #ifdef DEBUG
     if (LastPos !=encoder.axis[axis_num].currentPosition )
     {
-    printf("[%d] P: %ld,T: %ld,F: %ld\n",axis_num,encoder.axis[axis_num].currentPosition, (int32_t)Setpoint[axis_num], MotorOut[axis_num]);
+    printf("[%d] P: %ld,T: %ld,F: %ld\n",axis_num,encoder.axis[axis_num].currentPosition, (int32_t)Setpoint[axis_num], xy_forces[axis_num]);
 
     LastPos = encoder.axis[axis_num].currentPosition;
     }
     #endif
-
+    Send_Debug_Report();
   }
   printf("Find center Done.\n");
 

@@ -9,7 +9,8 @@
 #include "cppmain.h"
 #include "usbd_joystick_hid_if.h"
 #include "stm32_Flash.h"
-
+#include "FFBMain.h"
+#include "crc16.h"
 
 #define CURRENT_HW_VERSION		100
 #define CURRENT_SW_VERSION		100
@@ -90,20 +91,27 @@ void FFBConfig::Write_Config_To_Flash()
 
 		uint32_t flash_address = FLASH_START_BASE;
 		Flash_Write8BitDatas(flash_address, sizeof(SYS_CONFIG_t), (int8_t*) &SysConfig);
-		delay_us(100);
+
 	}
 
 uint8_t * FFBConfig::GetSysConfig()
 	{
 	   //printf("FFBConfig: Host Get Configs done.\n");
-		while(REQUEST_INTERVAL > (micros() - Host_request_time))
-		{
-			;
-		}
-		Host_request_time = micros();
+		uint16_t crc_check = crc16((uint8_t *)&SysConfig, sizeof(SysConfig)-2);
+		SysConfig.Checksum =  crc_check;
 		return (uint8_t *)&SysConfig;
 	}
 
+bool FFBConfig::Check_Recv_CRC(uint8_t *buff)
+{
+	SYS_CONFIG_t recData;
+	memcpy((uint8_t*) &recData, &buff[2], sizeof(SYS_CONFIG_t));
+	uint16_t recv_crc = crc16((uint8_t*) &recData, sizeof(SYS_CONFIG_t) -2);
+	if(recv_crc != recData.Checksum)
+		return false;
+
+	return true;
+}
 
 void FFBConfig::Host_To_Dev_SetFeature(uint8_t *buff)
 	{
@@ -112,32 +120,41 @@ void FFBConfig::Host_To_Dev_SetFeature(uint8_t *buff)
 		uint8_t CmdLen = buff[1];
 		uint8_t HW_Ver = buff[2];
 
+
 		switch (CmdID)
 			{
 
 			case CMD_WRITE_SYSCONFIG:
 				if ((CmdLen != sizeof(SYS_CONFIG_t)) && (HW_Ver != SysConfig.FW_Version.HW_Version))
 					break;
-				memcpy((uint8_t*) &SysConfig, &buff[2], sizeof(SYS_CONFIG_t));
-				Write_Config_To_Flash();			//Write to flash
-				//printf("FFBConfig: Host Write to Flash done.\n");
+				if(Check_Recv_CRC(buff))
+				{
+						memcpy((uint8_t*) &SysConfig, &buff[2], sizeof(SYS_CONFIG_t));
+						Write_Config_To_Flash();			//Write to flash
+						//printf("FFBConfig: Host Write to Flash done.\n");
+				}
+
 				break;
 			case CMD_UPDATE_SYSCONFIG:
 				if ((CmdLen != sizeof(SYS_CONFIG_t)) && (HW_Ver != SysConfig.FW_Version.HW_Version))
 					break;
-				memcpy((uint8_t*) &SysConfig, &buff[2], sizeof(SYS_CONFIG_t));
-				//printf("FFBConfig: Host Update change done.\n");
+				if(Check_Recv_CRC(buff))
+				{
+						memcpy((uint8_t*) &SysConfig, &buff[2], sizeof(SYS_CONFIG_t));
+						//printf("FFBConfig: Host Update change done.\n");
+				}
 				break;
 			case CMD_RESET_SYSCONFIG:
 				if (CmdLen != 0) break;					//Not Matching
 				Restore_Default_Config();
 				//printf("FFBConfig: Host Reset Default done.\n");
 				break;
-
+			case CMD_FINDCENTER:
+				Set_RunFirstTime_state(true);
+				break;
 			default:
 				break;
 			}
-
 
 	}
 

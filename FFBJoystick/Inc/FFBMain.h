@@ -99,8 +99,8 @@ typedef struct //PID state
   void AutoCalibration(uint8_t idx);
   void gotoPosition(int axis_num, int32_t targetPosition);
   void findCenter(int axis_num);
-
-
+  void Set_RunFirstTime_state(bool state);
+  void Send_Debug_Report();
 
 
 #endif /* INC_FFBMAIN_H_ */
