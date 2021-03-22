@@ -94,6 +94,7 @@ extern "C"
     int32_t Motor_Max_Speed;
     int32_t Motor_Min_Torque;
     int32_t Motor_Max_Torque;
+    int32_t Dead_Zone;
   } __attribute__((packed)) ACSERVO_PARAM;
 
   typedef struct

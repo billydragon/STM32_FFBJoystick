@@ -11,6 +11,7 @@
 #include "FFBMain.h"
 #include "FFBConfig.h"
 
+#define DEAD_ZONE	0
 #define DAC_STOP	map(0, -32767, 32767, DAC_MIN, DAC_MAX)
 extern FFBConfig config;
 
@@ -22,17 +23,26 @@ ACServo::ACServo()
 
 void ACServo::set_motor_dac(int32_t * _xy_forces)
 	{
-		int32_t x_force = _xy_forces[0];
-		int32_t y_force = _xy_forces[1];
+		int32_t x_force = 0;
+		int32_t y_force = 0;
 		int32_t x_speed = 0;
 		int32_t y_speed = 0;
+		uint16_t dead_zone_X = 0;
+		uint16_t dead_zone_Y = 0;
 
-		//AC Servo set gain 500rpm/1Volt
-		int32_t x_speed_min = config.SysConfig.AC_MotorSettings[0].Motor_Min_Speed * 327;
-		int32_t x_speed_max = config.SysConfig.AC_MotorSettings[0].Motor_Max_Speed * 327;
-		//printf("x_speed_min: %ld, x_speed_max: %ld\n",x_speed_min, x_speed_max);
-		int32_t y_speed_min = config.SysConfig.AC_MotorSettings[1].Motor_Min_Speed * 327;
-		int32_t y_speed_max = config.SysConfig.AC_MotorSettings[1].Motor_Max_Speed * 327;
+		dead_zone_X = config.SysConfig.AC_MotorSettings[X_AXIS].Dead_Zone;
+		dead_zone_Y = config.SysConfig.AC_MotorSettings[Y_AXIS].Dead_Zone;
+
+		int32_t x_speed_min = config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Min_Speed * 327;
+		int32_t x_speed_max = config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Speed * 327;
+		int32_t y_speed_min = config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Min_Speed * 327;
+		int32_t y_speed_max = config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Speed * 327;
+
+		int32_t x_torque_min = config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Min_Torque * 327;
+		int32_t x_torque_max = config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Torque * 327;
+		int32_t y_torque_min = config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Min_Torque * 327;
+		int32_t y_torque_max = config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Torque * 327;
+
 		//printf("y_speed_min: %d, y_speed_max: %d\n",y_speed_min, y_speed_max);
 		if(active == false)
 			{
@@ -42,13 +52,15 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 
 		//torque X
 
-		 if(x_force > 0)
+		 if(_xy_forces[X_AXIS] - dead_zone_X > 0)
 		 {
-			 x_speed = constrain(x_force,x_speed_min,x_speed_max);
+			 x_speed = constrain(_xy_forces[X_AXIS], x_speed_min, x_speed_max);
+			 x_force = constrain(_xy_forces[X_AXIS], x_torque_min, x_torque_max);
 		 }
-		 else if (x_force < 0)
+		 else if (_xy_forces[X_AXIS] + dead_zone_X < 0)
 		 {
-			 x_speed = constrain(x_force,-x_speed_max,-x_speed_min);
+			 x_speed = constrain(_xy_forces[X_AXIS], -x_speed_max, -x_speed_min);
+			 x_force = constrain(_xy_forces[X_AXIS], -x_torque_max, -x_torque_min);
 		 }
 		 else
 			 x_speed =0;
@@ -63,13 +75,15 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 
 		//torque Y
 
-		 if(y_force > 0)
+		 if(_xy_forces[Y_AXIS] - dead_zone_Y > 0)
 		 		 {
-		 			 y_speed = constrain(y_force,y_speed_min,y_speed_max);
+		 			 y_speed = constrain(_xy_forces[Y_AXIS], y_speed_min, y_speed_max);
+		 			 y_force = constrain(_xy_forces[Y_AXIS], y_torque_min, y_torque_max);
 		 		 }
-		 		 else if (y_force < 0)
+		 		 else if (_xy_forces[Y_AXIS] + dead_zone_Y < 0)
 		 		 {
-		 			 y_speed = constrain(y_force,-y_speed_max,-y_speed_min);
+		 			 y_speed = constrain(_xy_forces[Y_AXIS],-y_speed_max,-y_speed_min);
+		 			 y_force = constrain(_xy_forces[Y_AXIS], -y_torque_max, -y_torque_min);
 		 		 }
 		 		 else
 		 			 y_speed =0;
