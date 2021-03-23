@@ -35,8 +35,8 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 		int32_t y_speed = 0;
 
 
-		int32_t x_force_dead_zone_X = config.SysConfig.AC_MotorSettings[X_AXIS].Dead_Zone;
-		int32_t y_force_dead_zone_Y = config.SysConfig.AC_MotorSettings[Y_AXIS].Dead_Zone;
+		int32_t x_force_dead_zone = config.SysConfig.AC_MotorSettings[X_AXIS].Dead_Zone;
+		int32_t y_force_dead_zone = config.SysConfig.AC_MotorSettings[Y_AXIS].Dead_Zone;
 
 		int32_t x_speed_min = config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Min_Speed * 327.67f;
 		int32_t x_speed_max = config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Speed * 327.67f;
@@ -48,80 +48,56 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 		int32_t y_torque_min = config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Min_Torque * 327.67f;
 		int32_t y_torque_max = config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Torque * 327.67f;
 
-		uint16_t speed_dead_zone_X = x_speed_min - 1;
-		uint16_t speed_dead_zone_Y = y_speed_min - 1;
-		uint16_t torque_dead_zone_X = x_torque_min - 1;
-		uint16_t torque_dead_zone_Y = y_torque_min - 1;
 
-		//Speed X
-		 if(_xy_forces[X_AXIS] - speed_dead_zone_X > x_force_dead_zone_X)
+		//Speed X . Torque X
+		 if(_xy_forces[X_AXIS] - x_force_dead_zone > 0)
 		 {
 			 x_speed = constrain(_xy_forces[X_AXIS], x_speed_min, x_speed_max);
+			 x_force = constrain(_xy_forces[X_AXIS], x_torque_min, x_torque_max);
 
 		 }
-		 else if (_xy_forces[X_AXIS] + speed_dead_zone_X < -x_force_dead_zone_X)
+		 else if (_xy_forces[X_AXIS] + x_force_dead_zone  < 0)
 		 {
 			 x_speed = constrain(_xy_forces[X_AXIS], -x_speed_max, -x_speed_min);
+			 x_force = constrain(_xy_forces[X_AXIS], -x_torque_max, -x_torque_min);
 
 		 }
 		 else
+		 {
 			 x_speed =0;
+			 x_force =0;
+		 }
 
-		//Torque X
-		 if(_xy_forces[X_AXIS] - torque_dead_zone_X > x_force_dead_zone_X)
-		 		 {
+			x_force = map(x_force, -32767, 32767, DAC_MIN, DAC_MAX);
+			DAC856x_Set_Data(CS1, DAC_CH1,x_force);
 
-		 			 x_force = constrain(_xy_forces[X_AXIS], x_torque_min, x_torque_max);
-		 		 }
-		 else if (_xy_forces[X_AXIS] + torque_dead_zone_X < -x_force_dead_zone_X)
-		 		 {
+			x_speed = map(x_speed, -32767, 32767, DAC_MIN, DAC_MAX);
+			DAC856x_Set_Data(CS1, DAC_CH2,x_speed);
 
-		 			 x_force = constrain(_xy_forces[X_AXIS], -x_torque_max, -x_torque_min);
-		 		 }
-		 else
-		 			x_force =0;
-
-
-		x_force = map(x_force, -32767, 32767, DAC_MIN, DAC_MAX);
-		DAC856x_Set_Data(CS1, DAC_CH1,x_force);
-
-		x_speed = map(x_speed, -32767, 32767, DAC_MIN, DAC_MAX);
-
-		DAC856x_Set_Data(CS1, DAC_CH2,x_speed);
-
-		//Speed Y
-
-		 if(_xy_forces[Y_AXIS] - speed_dead_zone_Y > y_force_dead_zone_Y)
+		 //Speed Y, Torque Y
+		 if(_xy_forces[Y_AXIS] - y_force_dead_zone > 0)
 		 {
 			 y_speed = constrain(_xy_forces[Y_AXIS], y_speed_min, y_speed_max);
+			 y_force = constrain(_xy_forces[Y_AXIS], y_torque_min, y_torque_max);
 
 		 }
-		 else if (_xy_forces[Y_AXIS] + speed_dead_zone_Y < y_force_dead_zone_Y)
+		 else if (_xy_forces[Y_AXIS] + y_force_dead_zone < 0)
 		 {
 			 y_speed = constrain(_xy_forces[Y_AXIS],-y_speed_max,-y_speed_min);
-
-		 }
-		 else
-			 y_speed =0;
-
-		 //Torque Y
-		 if(_xy_forces[Y_AXIS] - torque_dead_zone_Y > y_force_dead_zone_Y)
-		 {
-
-			 y_force = constrain(_xy_forces[Y_AXIS], y_torque_min, y_torque_max);
-		 }
-		 else if (_xy_forces[Y_AXIS] + torque_dead_zone_Y < -y_force_dead_zone_Y)
-		 {
-
 			 y_force = constrain(_xy_forces[Y_AXIS], -y_torque_max, -y_torque_min);
+
 		 }
 		 else
+		 {
+			 y_speed =0;
 			 y_force =0;
+		 }
 
-		y_force = map(y_force, -32767, 32767, DAC_MIN, DAC_MAX);
-		DAC856x_Set_Data(CS2, DAC_CH1,y_force);
-		y_speed = map(y_speed, -32767, 32767, DAC_MIN, DAC_MAX);
-		DAC856x_Set_Data(CS2, DAC_CH2,y_speed);
+			y_force = map(y_force, -32767, 32767, DAC_MIN, DAC_MAX);
+			DAC856x_Set_Data(CS2, DAC_CH1,y_force);
+
+			y_speed = map(y_speed, -32767, 32767, DAC_MIN, DAC_MAX);
+			DAC856x_Set_Data(CS2, DAC_CH2,y_speed);
 	}
 
 

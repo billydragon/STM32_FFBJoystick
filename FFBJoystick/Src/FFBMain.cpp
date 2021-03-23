@@ -58,7 +58,7 @@ void Set_PID_Turnings()
   Kd[ax] = config.SysConfig.Pid[ax].Kd;
   myPID[ax].SetTunings(Kp[ax],Ki[ax],Kd[ax]);
   myPID[ax].SetSampleTime(config.SysConfig.Pid[ax].SampleTime);
-  temp_outputlimit = (config.SysConfig.Pid[ax].MaxOutput * 32767) / 100;
+  temp_outputlimit = (config.SysConfig.Pid[ax].MaxOutput * 327.67f);
   temp_outputlimit =  constrain(temp_outputlimit, 0,32767);
   myPID[ax].SetOutputLimits(-temp_outputlimit, temp_outputlimit);
   myPID[ax].SetMode(AUTOMATIC);
@@ -386,10 +386,11 @@ void gotoPosition(int axis_num, int32_t targetPosition) {
   xy_forces[X_AXIS] = 0;
   xy_forces[Y_AXIS] = 0;
   printf("Goto center...\n");
-  Set_PID_Turnings();
+
   Setpoint[axis_num] = targetPosition;
   while (encoder.axis[axis_num].currentPosition != targetPosition)
   {
+	Set_PID_Turnings();
     Setpoint[axis_num] = targetPosition;
     encoder.updatePosition(axis_num);
     Input[axis_num] = encoder.axis[axis_num].currentPosition ;
