@@ -103,6 +103,12 @@ int main(void)
   MX_TIM1_Init();
   MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
+
+  /* ***************************************** WARNING !!! ******************************************************
+   * After using STM32CubeMX or STM32CubeIDE generation code. you just delete 2 files: usb_otg.c and usb_otg.h	*
+   * this files will conflig with in this project USB device Joystick module.   								*
+   * 																											*
+   * ************************************************************************************************************/
   MX_USB_DEVICE_Init ();
   htim10.Instance->CR1 = 1; // Enable microsecond clock
   delay_us (1000);
