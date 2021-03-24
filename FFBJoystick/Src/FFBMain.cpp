@@ -107,6 +107,8 @@ void start_joystick ()
 	if((config.SysConfig.AppConfig.Auto_Calibration ==1) && (RunFirstTime == true))
 	{
 		findCenter(X_AXIS);
+		HAL_Delay(500);
+		findCenter(Y_AXIS);
 		RunFirstTime = false;
 	}
 
@@ -206,7 +208,6 @@ void start_joystick ()
       xy_forces[Y_AXIS] = XY_FORCE_MAX;
     }
 
-  CalculateMaxSpeedAndMaxAcceleration ();
 
   Motors.SetMotorOutput(xy_forces);
 
@@ -241,6 +242,8 @@ void Send_Debug_Report()
 
 void SetEffects ()
 {
+	CalculateMaxSpeedAndMaxAcceleration ();
+
   effects[X_AXIS].springPosition = encoder.axis[X_AXIS].currentPosition;
   effects[Y_AXIS].springPosition = encoder.axis[Y_AXIS].currentPosition;
 
@@ -343,7 +346,7 @@ void findCenter(int axis_num)
   HAL_GPIO_WritePin(GPIOD, LED2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOD, LED4_Pin, GPIO_PIN_RESET);
 
-    Axis_Center= (encoder.axis[axis_num].minValue + encoder.axis[axis_num].maxValue)/2;
+    Axis_Center= (encoder.axis[axis_num].minValue + encoder.axis[axis_num].maxValue)/2 ;
     Axis_Range =  abs(encoder.axis[axis_num].minValue) + abs(encoder.axis[axis_num].maxValue);
 
     #ifdef DEBUG
@@ -357,7 +360,7 @@ void findCenter(int axis_num)
 				gotoPosition(X_AXIS, Axis_Center);    //goto center X
 				//SetZero_Encoder(X_AXIS);
 				encoder.setPos(X_AXIS, 0);
-				encoder.axis[X_AXIS].maxValue =(Axis_Range - AXIS_EDGE_PROTECT)/2;
+				encoder.axis[X_AXIS].maxValue =(Axis_Range - AXIS_BACKWARD)/2;
 				encoder.axis[X_AXIS].minValue = -encoder.axis[X_AXIS].maxValue;
 				Joystick.setXAxisRange(encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
 				Joystick.setXAxis(encoder.axis[X_AXIS].currentPosition);
@@ -366,7 +369,7 @@ void findCenter(int axis_num)
 			case Y_AXIS:
 				gotoPosition(Y_AXIS, Axis_Center);    //goto center X
 				encoder.setPos(Y_AXIS, 0);
-				encoder.axis[Y_AXIS].maxValue = (Axis_Range - AXIS_EDGE_PROTECT)/2;
+				encoder.axis[Y_AXIS].maxValue = (Axis_Range - AXIS_BACKWARD)/2;
 				encoder.axis[Y_AXIS].minValue = -encoder.axis[Y_AXIS].maxValue;
 				Joystick.setYAxisRange(encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
 				Joystick.setYAxis(encoder.axis[Y_AXIS].currentPosition);

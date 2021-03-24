@@ -72,7 +72,7 @@ extern "C"
 
 #define REPORT_FORCES_DATA		0x01
 #define REPORT_JOYSTICK_DATA	0x02
-#define AXIS_EDGE_PROTECT   	50
+#define AXIS_BACKWARD   		100
 
 #define USBLOG_INTERVAL		10000
 

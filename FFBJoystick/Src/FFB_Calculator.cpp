@@ -81,6 +81,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     }
 
   float angle = ((float)direction * 360.0 / 255.0) * DEG_TO_RAD;
+  //float angle = ((float)direction * 360.0 / 65535.0) * DEG_TO_RAD;
   float angle_ratio = axis == 0 ? sin (angle) : -1 * cos (angle);
 
   int32_t force = 0;
@@ -206,7 +207,8 @@ void forceCalculator (int32_t *forces)
 int32_t ConstantForceCalculator (volatile TEffectState &effect)
 {
 
-  float tempforce = ((float) effect.magnitude * (int32_t)(1 + effect.gain))/256;
+  float tempforce = ((float) effect.magnitude * (int32_t)(1 + effect.gain))/255;
+  //float tempforce = ((float) effect.magnitude * (int32_t)(1 + effect.gain))/0xFFFF;
   //tempforce = map(tempforce, -10000, 10000, -255, 255);			//DAC resulusion 16 bit - remove this
   tempforce = map(tempforce, -10000, 10000, -32767, 32767);
   return (int32_t) tempforce;
@@ -232,7 +234,8 @@ int32_t SquareForceCalculator (volatile TEffectState &effect)
 
   int32_t maxMagnitude = offset + magnitude;
   int32_t minMagnitude = offset - magnitude;
-  uint32_t phasetime = (phase * period) / 255;
+  //uint32_t phasetime = (phase * period) / 255;
+  uint32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   uint32_t reminder = timeTemp % period;
   int32_t tempforce;
@@ -269,7 +272,8 @@ int32_t TriangleForceCalculator (volatile TEffectState &effect)
 
   float maxMagnitude = offset + magnitude;
   float minMagnitude = offset - magnitude;
-  uint32_t phasetime = (phase * period) / 255;
+  //uint32_t phasetime = (phase * period) / 255;
+  uint32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   float reminder = timeTemp % period;
   float slope = ((maxMagnitude - minMagnitude) * 2) / periodF;
@@ -293,7 +297,8 @@ int32_t SawtoothDownForceCalculator (volatile TEffectState &effect)
 
   float maxMagnitude = offset + magnitude;
   float minMagnitude = offset - magnitude;
-  int32_t phasetime = (phase * period) / 255;
+  //int32_t phasetime = (phase * period) / 255;
+  int32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   float reminder = timeTemp % period;
   float slope = (maxMagnitude - minMagnitude) / periodF;
@@ -314,7 +319,8 @@ int32_t SawtoothUpForceCalculator (volatile TEffectState &effect)
 
   float maxMagnitude = offset + magnitude;
   float minMagnitude = offset - magnitude;
-  int32_t phasetime = (phase * period) / 255;
+  //int32_t phasetime = (phase * period) / 255;
+  int32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   float reminder = timeTemp % period;
   float slope = (maxMagnitude - minMagnitude) / periodF;
@@ -358,6 +364,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, u
     }
 	  //else return 0;
 	  tempForce = -tempForce * effect.gain / 255;
+	  //tempForce = -tempForce * effect.gain / 0xFFFF;
   switch (effect.effectType)
     {
     case USB_EFFECT_DAMPER:
@@ -389,6 +396,7 @@ int32_t ApplyGain (uint8_t value, uint8_t gain)
 {
   int32_t value_32 = (int16_t) value;
   return ((value_32 * gain) / 255);
+  //return ((value_32 * gain) / 0xFFFF);
 }
 
 int32_t ApplyEnvelope (volatile TEffectState &effect, int32_t value)
@@ -417,6 +425,7 @@ int32_t ApplyEnvelope (volatile TEffectState &effect, int32_t value)
 
   newValue *= value;
   newValue /= 255;
+  //newValue /= 0xFFFF; //16 bits
   return newValue;
 }
 
