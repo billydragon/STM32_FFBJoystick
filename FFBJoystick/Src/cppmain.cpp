@@ -24,13 +24,15 @@ void delay_us (uint16_t us)
     {;}
 }
 
+
+
 void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 {
+
   /* Prevent unused argument(s) compilation warning */
   if (GPIO_Pin == Buttons[0].pinNumber)
     {
-      uint8_t bState = !HAL_GPIO_ReadPin (Buttons[0].Port,
-					  Buttons[0].pinNumber);
+      uint8_t bState = !HAL_GPIO_ReadPin (Buttons[0].Port, Buttons[0].pinNumber);
       if (Buttons[0].CurrentState != bState)
 	{
 	  if ((HAL_GetTick () - Buttons[0].millis_time) > DEBOUNCE_TIME)
@@ -41,14 +43,59 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 	    }
 	  else
 	    {
-	      Buttons[0].CurrentState = !HAL_GPIO_ReadPin (
-		  Buttons[0].Port, Buttons[0].pinNumber);
+	      Buttons[0].CurrentState = !HAL_GPIO_ReadPin (Buttons[0].Port, Buttons[0].pinNumber);
 	    }
 	}
 
       EXTI->PR |= Buttons[0].pinNumber;
 
+
     }
+  uint8_t limitswitch_state = 0;
+	  if(GPIO_Pin == Limit_Switch[X_LIMIT_MAX].pinNumber)
+	  {
+				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MAX].Port, Limit_Switch[X_LIMIT_MAX].pinNumber);
+				  if (Limit_Switch[X_LIMIT_MAX].CurrentState != limitswitch_state)
+					{
+					  Limit_Switch[X_LIMIT_MAX].CurrentState = limitswitch_state;
+					}
+				  LimitSwitch_trig(X_LIMIT_MAX);
+				  EXTI->PR |= Limit_Switch[X_LIMIT_MAX].pinNumber;
+
+
+	  }
+	  else if(GPIO_Pin == Limit_Switch[X_LIMIT_MIN].pinNumber)
+	  {
+				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MIN].Port, Limit_Switch[X_LIMIT_MIN].pinNumber);
+				  if (Limit_Switch[X_LIMIT_MIN].CurrentState != limitswitch_state)
+					{
+					  Limit_Switch[X_LIMIT_MIN].CurrentState = limitswitch_state;
+					}
+				  LimitSwitch_trig(X_LIMIT_MIN);
+				  EXTI->PR |= Limit_Switch[X_LIMIT_MIN].pinNumber;
+	  }
+	  else if(GPIO_Pin == Limit_Switch[Y_LIMIT_MAX].pinNumber)
+	  {
+				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MAX].Port, Limit_Switch[Y_LIMIT_MAX].pinNumber);
+				  if (Limit_Switch[Y_LIMIT_MAX].CurrentState != limitswitch_state)
+					{
+					  Limit_Switch[Y_LIMIT_MAX].CurrentState = limitswitch_state;
+					}
+				  LimitSwitch_trig(Y_LIMIT_MAX);
+				  EXTI->PR |= Limit_Switch[Y_LIMIT_MAX].pinNumber;
+	  }
+	  else if (GPIO_Pin == Limit_Switch[Y_LIMIT_MIN].pinNumber)
+	  {
+
+				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MIN].Port, Limit_Switch[Y_LIMIT_MIN].pinNumber);
+					  if (Limit_Switch[Y_LIMIT_MIN].CurrentState != limitswitch_state)
+						{
+						  Limit_Switch[Y_LIMIT_MIN].CurrentState = limitswitch_state;
+						}
+					  LimitSwitch_trig(Y_LIMIT_MIN);
+					  EXTI->PR |= Limit_Switch[Y_LIMIT_MIN].pinNumber;
+
+	  }
 
 }
 
@@ -85,7 +132,7 @@ void cppmain (void)
 
       start_joystick ();
 
-      HAL_Delay (1);
+      //HAL_Delay (1);
 
     }
 

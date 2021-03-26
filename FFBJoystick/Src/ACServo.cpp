@@ -38,6 +38,7 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 		int32_t x_force_dead_zone = config.SysConfig.AC_MotorSettings[X_AXIS].Dead_Zone;
 		int32_t y_force_dead_zone = config.SysConfig.AC_MotorSettings[Y_AXIS].Dead_Zone;
 
+		/*
 		int32_t x_speed_min = config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Min_Speed * 327.67f;
 		int32_t x_speed_max = config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Speed * 327.67f;
 		int32_t y_speed_min = config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Min_Speed * 327.67f;
@@ -47,7 +48,16 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 		int32_t x_torque_max = config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Torque * 327.67f;
 		int32_t y_torque_min = config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Min_Torque * 327.67f;
 		int32_t y_torque_max = config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Torque * 327.67f;
+		*/
 
+		int32_t x_speed_min = map(config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Min_Speed,0,3000,0,32767);
+		int32_t x_speed_max = map(config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Speed,0,3000,0,32767);
+		int32_t y_speed_min = map(config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Min_Speed,0,3000,0,32767);
+		int32_t y_speed_max = map(config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Speed,0,3000,0,32767);
+		int32_t x_torque_min = map(config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Min_Torque,0,300,0,32767);
+		int32_t x_torque_max = map(config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Torque,0,300,0,32767);
+		int32_t y_torque_min = map(config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Min_Torque,0,300,0,32767);
+		int32_t y_torque_max = map(config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Torque,0,300,0,32767);
 
 		//Speed X . Torque X
 		 if(_xy_forces[X_AXIS] - x_force_dead_zone > 0)

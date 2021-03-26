@@ -51,10 +51,16 @@ extern "C"
 #define RX_AXIS					0
 #define RY_AXIS					1
 
+#define X_LIMIT_MAX				0
+#define X_LIMIT_MIN				1
+#define Y_LIMIT_MAX				2
+#define Y_LIMIT_MIN				3
+
 #define NUM_OF_ADC_CHANNELS		6
 #define NUM_OF_ENC_AXIS			2
 #define NUM_OF_ANALOG_AXIS		2
 
+#define NUM_OF_LIMITSWITCH		4
 #define NUM_OF_BUTTONS			32
 #define NUM_OF_HATSWITCH		0
 #define ENCODER_MAX			 	1000000 		//-32767
@@ -87,7 +93,7 @@ typedef struct //PID state
   extern TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS];
   extern TDF_BUTTON Buttons[NUM_OF_BUTTONS];
   extern uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
-
+  extern TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
 
 
   void init_Joystick();
@@ -98,9 +104,9 @@ typedef struct //PID state
   void Set_PID_Turnings();
   void AutoCalibration(uint8_t idx);
   void gotoPosition(int axis_num, int32_t targetPosition);
-  void findCenter(int axis_num);
+  void findCenter_Manual(int axis_num);
   void Set_RunFirstTime_state(bool state);
   void Send_Debug_Report();
-
-
+  void findCenter_Auto();
+  void LimitSwitch_trig(uint8_t lms_type);
 #endif /* INC_FFBMAIN_H_ */

@@ -25,10 +25,11 @@ QEncoder encoder  __attribute__((section("ccmram")));
 MotorDriver Motors  __attribute__((section("ccmram")));
 
 TDF_BUTTON Buttons[NUM_OF_BUTTONS];
+TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
 uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
 USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
-bool RunFirstTime = true;
+volatile bool RunFirstTime = true;
 
 double Setpoint[2], Input[2], Output[2];
 //double Kp=2, Ki=5, Kd=1;
@@ -58,8 +59,8 @@ void Set_PID_Turnings()
   Kd[ax] = config.SysConfig.Pid[ax].Kd;
   myPID[ax].SetTunings(Kp[ax],Ki[ax],Kd[ax]);
   myPID[ax].SetSampleTime(config.SysConfig.Pid[ax].SampleTime);
-  temp_outputlimit = (config.SysConfig.Pid[ax].MaxOutput * 327.67f);
-  temp_outputlimit =  constrain(temp_outputlimit, 0,32767);
+  temp_outputlimit = map(config.SysConfig.Pid[ax].MaxOutput,0,3000,0,32767);
+
   myPID[ax].SetOutputLimits(-temp_outputlimit, temp_outputlimit);
   myPID[ax].SetMode(AUTOMATIC);
   }
@@ -89,6 +90,17 @@ void init_Joystick ()
 
   Buttons[0].pinNumber = JBUTTON1_Pin;
   Buttons[0].Port = JBUTTON1_GPIO_Port;
+  Limit_Switch[X_LIMIT_MAX].pinNumber = X_LIMIT_MAX_Pin;
+  Limit_Switch[X_LIMIT_MAX].Port = X_LIMIT_MAX_GPIO_Port;
+  Limit_Switch[X_LIMIT_MIN].pinNumber = X_LIMIT_MIN_Pin;
+  Limit_Switch[X_LIMIT_MIN].Port = X_LIMIT_MIN_GPIO_Port;
+
+  Limit_Switch[Y_LIMIT_MAX].pinNumber = Y_LIMIT_MAX_Pin;
+  Limit_Switch[Y_LIMIT_MAX].Port = Y_LIMIT_MAX_GPIO_Port;
+  Limit_Switch[Y_LIMIT_MIN].pinNumber = Y_LIMIT_MIN_Pin;
+  Limit_Switch[Y_LIMIT_MIN].Port = Y_LIMIT_MIN_GPIO_Port;
+
+
   encoder.Begin ();
 
   Joystick.setXAxisRange(encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
@@ -104,11 +116,20 @@ void init_Joystick ()
 void start_joystick ()
 {
 
-	if((config.SysConfig.AppConfig.Auto_Calibration ==1) && (RunFirstTime == true))
+	if(RunFirstTime == true)
 	{
-		findCenter(X_AXIS);
-		HAL_Delay(500);
-		findCenter(Y_AXIS);
+		if(config.SysConfig.AppConfig.Auto_Calibration ==1)
+		{
+			findCenter_Auto();
+		}
+		else
+		{
+			findCenter_Manual(X_AXIS);
+			HAL_Delay(500);
+			findCenter_Manual(Y_AXIS);
+			HAL_Delay(500);
+		}
+
 		RunFirstTime = false;
 	}
 
@@ -299,7 +320,7 @@ void AutoCalibration(uint8_t idx)
 
 }
 
-void findCenter(int axis_num)
+void findCenter_Manual(int axis_num)
 {
 
   int32_t LastPos=0, Axis_Center=0 ,Axis_Range=0;
@@ -315,9 +336,10 @@ void findCenter(int axis_num)
   encoder.axis[axis_num].minValue =0;
   encoder.axis[axis_num].maxValue =0;
   encoder.setPos(axis_num, 0);
-  printf("Starting find center...\n");
+
   Motors.MotorDriverOn(X_AXIS);
   Motors.MotorDriverOn(Y_AXIS);
+
   while (Buttons[0].CurrentState == 0)
   {
 	if(( HAL_GetTick() - LedBlinkTime) > 500)
@@ -336,10 +358,6 @@ void findCenter(int axis_num)
 		AutoCalibration(axis_num);
 		LastPos = encoder.axis[axis_num].currentPosition;
 
-		#ifdef DEBUG
-			printf("[%d]: %ld,%ld\n", axis_num, encoder.axis[axis_num].minValue, encoder.axis[axis_num].maxValue);
-
-		#endif
     }
     Send_Debug_Report();
   }
@@ -348,11 +366,6 @@ void findCenter(int axis_num)
 
     Axis_Center= (encoder.axis[axis_num].minValue + encoder.axis[axis_num].maxValue)/2 ;
     Axis_Range =  abs(encoder.axis[axis_num].minValue) + abs(encoder.axis[axis_num].maxValue);
-
-    #ifdef DEBUG
-    printf("[%d]: %ld - 0 - %ld\n", axis_num, encoder.axis[axis_num].minValue, encoder.axis[axis_num].maxValue);
-
-    #endif
 
     switch (axis_num)
 		{
@@ -383,16 +396,114 @@ void findCenter(int axis_num)
 }
 
 
+
+void findCenter_Auto()
+{
+
+	int32_t Axis_Center=0 ,Axis_Range=0;
+	  //int32_t MotorOut[2] = {0,0};
+	  xy_forces[X_AXIS] = 0;
+	  xy_forces[Y_AXIS] = 0;
+
+
+	  Motors.SetMotorOutput(xy_forces);
+	  Motors.MotorDriverOff(X_AXIS);
+	  Motors.MotorDriverOff(Y_AXIS);
+
+	  encoder.axis[X_AXIS].minValue =0;
+	  encoder.axis[X_AXIS].maxValue =0;
+	  encoder.setPos(X_AXIS, 0);
+	  Motors.MotorDriverOn(X_AXIS);
+	  //Motors.MotorDriverOn(Y_AXIS);
+
+	  do //X MAX
+	  {
+		xy_forces[X_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
+		Motors.SetMotorOutput(xy_forces);
+	    encoder.updatePosition(X_AXIS);
+		AutoCalibration(X_AXIS);
+	    Send_Debug_Report();
+	  }while (Limit_Switch[X_LIMIT_MAX].CurrentState == 0);
+
+	  xy_forces[X_AXIS] = 0;
+	  Motors.SetMotorOutput(xy_forces);
+
+	  do //X MIN
+	 	  {
+	 		xy_forces[X_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
+	 		Motors.SetMotorOutput(xy_forces);
+	 	    encoder.updatePosition(X_AXIS);
+	 		AutoCalibration(X_AXIS);
+	 	    Send_Debug_Report();
+	 	  }while (Limit_Switch[X_LIMIT_MIN].CurrentState == 0);
+
+	     xy_forces[X_AXIS] = 0;
+	     Motors.SetMotorOutput(xy_forces);
+
+	    Axis_Center= (encoder.axis[X_AXIS].minValue + encoder.axis[X_AXIS].maxValue)/2 ;
+	    Axis_Range =  abs(encoder.axis[X_AXIS].minValue) + abs(encoder.axis[X_AXIS].maxValue);
+
+					gotoPosition(X_AXIS, Axis_Center);    //goto center X
+					//SetZero_Encoder(X_AXIS);
+					encoder.setPos(X_AXIS, 0);
+					encoder.axis[X_AXIS].maxValue =(Axis_Range - AXIS_BACKWARD)/2;
+					encoder.axis[X_AXIS].minValue = -encoder.axis[X_AXIS].maxValue;
+					Joystick.setXAxisRange(encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
+					Joystick.setXAxis(encoder.axis[X_AXIS].currentPosition);
+					Motors.SetMotorOutput(xy_forces);
+
+	//***************************************************************************************
+				encoder.axis[Y_AXIS].minValue =0;
+				encoder.axis[Y_AXIS].maxValue =0;
+				encoder.setPos(Y_AXIS, 0);
+				 Motors.MotorDriverOn(Y_AXIS);
+
+				  do //Y MAX
+				  {
+					xy_forces[Y_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
+					Motors.SetMotorOutput(xy_forces);
+					encoder.updatePosition(Y_AXIS);
+					AutoCalibration(Y_AXIS);
+					Send_Debug_Report();
+
+				  }while (Limit_Switch[Y_LIMIT_MAX].CurrentState == 0);
+				  xy_forces[Y_AXIS] = 0;
+				  Motors.SetMotorOutput(xy_forces);
+				  do //Y MIN
+					  {
+						xy_forces[Y_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
+						Motors.SetMotorOutput(xy_forces);
+						encoder.updatePosition(Y_AXIS);
+						AutoCalibration(Y_AXIS);
+						Send_Debug_Report();
+					  }while (Limit_Switch[Y_LIMIT_MIN].CurrentState == 0);
+
+					 xy_forces[Y_AXIS] = 0;
+					 Motors.SetMotorOutput(xy_forces);
+					Axis_Center= (encoder.axis[Y_AXIS].minValue + encoder.axis[Y_AXIS].maxValue)/2 ;
+					Axis_Range =  abs(encoder.axis[Y_AXIS].minValue) + abs(encoder.axis[Y_AXIS].maxValue);
+					gotoPosition(Y_AXIS, Axis_Center);    //goto center X
+					encoder.setPos(Y_AXIS, 0);
+					encoder.axis[Y_AXIS].maxValue = (Axis_Range - AXIS_BACKWARD)/2;
+					encoder.axis[Y_AXIS].minValue = -encoder.axis[Y_AXIS].maxValue;
+					Joystick.setYAxisRange(encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
+					Joystick.setYAxis(encoder.axis[Y_AXIS].currentPosition);
+					Motors.SetMotorOutput(xy_forces);
+
+}
+
+
 void gotoPosition(int axis_num, int32_t targetPosition) {
-  int32_t LastPos=0;
+
   //int32_t MotorOut[2] = {0,0};
   xy_forces[X_AXIS] = 0;
   xy_forces[Y_AXIS] = 0;
-  printf("Goto center...\n");
+
 
   Setpoint[axis_num] = targetPosition;
   while (encoder.axis[axis_num].currentPosition != targetPosition)
   {
+
 	Set_PID_Turnings();
     Setpoint[axis_num] = targetPosition;
     encoder.updatePosition(axis_num);
@@ -411,22 +522,13 @@ void gotoPosition(int axis_num, int32_t targetPosition) {
     }
 
 
-
     xy_forces[axis_num] = Output[axis_num];
     Motors.SetMotorOutput(xy_forces);
 
-    #ifdef DEBUG
-    if (LastPos !=encoder.axis[axis_num].currentPosition )
-    {
-    printf("[%d] P: %ld,T: %ld,F: %ld\n",axis_num,encoder.axis[axis_num].currentPosition, (int32_t)Setpoint[axis_num], xy_forces[axis_num]);
-
-    LastPos = encoder.axis[axis_num].currentPosition;
-    }
-    #endif
     Send_Debug_Report();
   }
-  printf("Find center Done.\n");
-
+  xy_forces[axis_num] = 0;
+  Motors.SetMotorOutput(xy_forces);
 }
 
 
@@ -449,4 +551,45 @@ void CalculateMaxSpeedAndMaxAcceleration()
 	  encoder.axis[i].maxPositionChange = abs(encoder.axis[i].positionChange);
 	}
     }
+}
+
+void LimitSwitch_trig(uint8_t lms_type)
+{
+	if(RunFirstTime == false)
+		return;
+
+	switch(lms_type)
+	{
+		case X_LIMIT_MAX:
+			if(Limit_Switch[X_LIMIT_MAX].CurrentState == 1)
+			{
+				xy_forces[X_AXIS] = 0;
+				Motors.SetMotorOutput(xy_forces);
+			}
+			break;
+		case X_LIMIT_MIN:
+			if(Limit_Switch[X_LIMIT_MIN].CurrentState == 1)
+			{
+				xy_forces[X_AXIS] = 0;
+				Motors.SetMotorOutput(xy_forces);
+			}
+			break;
+		case Y_LIMIT_MAX:
+			if(Limit_Switch[Y_LIMIT_MAX].CurrentState == 1)
+			{
+				xy_forces[Y_AXIS] = 0;
+				Motors.SetMotorOutput(xy_forces);
+		}
+			break;
+		case Y_LIMIT_MIN:
+			if(Limit_Switch[Y_LIMIT_MIN].CurrentState == 1)
+			{
+				xy_forces[Y_AXIS] = 0;
+				Motors.SetMotorOutput(xy_forces);
+			}
+			break;
+		default:
+			break;
+	}
+
 }

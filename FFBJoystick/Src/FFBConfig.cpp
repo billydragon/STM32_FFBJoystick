@@ -21,12 +21,13 @@
 #define CHECKSUM				0
 #define REQUEST_INTERVAL		10000 //(microseconds)
 #define XY_FORCE_DEADZONE		50
+#define DEFAULT_HOME_SPEED		120
 uint32_t Host_request_time =0;
 
 // @formatter:off
 const SYS_CONFIG_t SysConfig_default = {
 							FW_VERSION{CURRENT_HW_VERSION, CURRENT_SW_VERSION},
-							APP_PARAM{0, 0, 0, 1, 0, 0, DAC856x_OUTPUT, 0},
+							APP_PARAM{0, 0, 0, 1, 0, 0, DAC856x_OUTPUT, 0,DEFAULT_HOME_SPEED},
 							GAIN_PARAM{100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100},
 							GAIN_PARAM{100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100, 100},
 							PID_PARAM{100, 1, 1.5, 0.07, 0.01},

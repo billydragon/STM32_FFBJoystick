@@ -80,6 +80,7 @@ extern "C"
     uint8_t Axis_Inv_Y;
     uint8_t Motor_Driver;
     uint8_t Reserve3;
+    int32_t Home_Speed;
   } __attribute__((packed)) APP_PARAM;
 
   typedef struct
