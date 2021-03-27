@@ -10,7 +10,7 @@
 #include "stdio.h"
 #include "stdlib.h"
 
-unsigned short crc16(const unsigned char* data_p, uint16_t length){
+unsigned short crc16(const unsigned char* data_p, unsigned short length){
     unsigned char x;
     unsigned short crc = 0xFFFF;
 

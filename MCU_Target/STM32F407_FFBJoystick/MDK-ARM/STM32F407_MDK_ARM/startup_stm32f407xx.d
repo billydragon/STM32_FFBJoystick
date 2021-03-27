@@ -1,1 +1,0 @@
-stm32f407_mdk_arm\startup_stm32f407xx.o: startup_stm32f407xx.s

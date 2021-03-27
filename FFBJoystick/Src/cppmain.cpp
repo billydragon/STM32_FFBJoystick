@@ -4,6 +4,7 @@
 #include "FFBMain.h"
 //#include "stm32f4xx_hal.h"
 #include "QEncoder.h"
+#include "MotorDriver.h"
 
 long map (long x, long in_min, long in_max, long out_min, long out_max)
 {
@@ -13,6 +14,12 @@ long map (long x, long in_min, long in_max, long out_min, long out_max)
 uint8_t * JoystickHIDReportDescr;
 uint16_t  JoystickHIDReportDescr_Size;
 
+extern QEncoder encoder;
+extern MotorDriver Motors;
+extern int32_t xy_forces[2];
+extern volatile bool RunFirstTime;
+
+void LimitSwitch_trig(uint16_t GPIO_Pin);
 
 uint32_t micros ()
 { return htim10.Instance->CNT; }
@@ -49,55 +56,100 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 
       EXTI->PR |= Buttons[0].pinNumber;
 
-
     }
-  uint8_t limitswitch_state = 0;
-	  if(GPIO_Pin == Limit_Switch[X_LIMIT_MAX].pinNumber)
-	  {
+
+  if (GPIO_Pin == Estop_Sw.pinNumber)
+      {
+        uint8_t bState = !HAL_GPIO_ReadPin(Estop_Sw.Port, Estop_Sw.pinNumber);
+        if (Estop_Sw.CurrentState != bState)
+		{
+        	Estop_Sw.CurrentState = bState;
+		}
+        if(Estop_Sw.CurrentState == 1)
+        {
+        	Motors.MotorDriverOff(X_AXIS);
+        	Motors.MotorDriverOff(Y_AXIS);
+        }
+
+        EXTI->PR |= Estop_Sw.pinNumber;
+      }
+
+
+  if(RunFirstTime == true)
+  		{
+	  LimitSwitch_trig(GPIO_Pin);
+  		}
+
+}
+
+void LimitSwitch_trig(uint16_t GPIO_Pin)
+{
+	 uint8_t limitswitch_state = 0;
+
+		  if(GPIO_Pin == Limit_Switch[X_LIMIT_MAX].pinNumber)
+		  {
 				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MAX].Port, Limit_Switch[X_LIMIT_MAX].pinNumber);
 				  if (Limit_Switch[X_LIMIT_MAX].CurrentState != limitswitch_state)
 					{
 					  Limit_Switch[X_LIMIT_MAX].CurrentState = limitswitch_state;
 					}
-				  LimitSwitch_trig(X_LIMIT_MAX);
+				  if(Limit_Switch[X_LIMIT_MAX].CurrentState == 1)
+				  {
+					  xy_forces[X_AXIS] = 0;
+					 				  Motors.SetMotorOutput(xy_forces);
+				  }
+
 				  EXTI->PR |= Limit_Switch[X_LIMIT_MAX].pinNumber;
 
 
-	  }
-	  else if(GPIO_Pin == Limit_Switch[X_LIMIT_MIN].pinNumber)
-	  {
+		  }
+		  else if(GPIO_Pin == Limit_Switch[X_LIMIT_MIN].pinNumber)
+		  {
 				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MIN].Port, Limit_Switch[X_LIMIT_MIN].pinNumber);
 				  if (Limit_Switch[X_LIMIT_MIN].CurrentState != limitswitch_state)
 					{
 					  Limit_Switch[X_LIMIT_MIN].CurrentState = limitswitch_state;
 					}
-				  LimitSwitch_trig(X_LIMIT_MIN);
+				  if (Limit_Switch[X_LIMIT_MIN].CurrentState == 1)
+				  	{
+					  xy_forces[X_AXIS] = 0;
+					  Motors.SetMotorOutput(xy_forces);
+				  	}
 				  EXTI->PR |= Limit_Switch[X_LIMIT_MIN].pinNumber;
-	  }
-	  else if(GPIO_Pin == Limit_Switch[Y_LIMIT_MAX].pinNumber)
-	  {
+		  }
+		  else if(GPIO_Pin == Limit_Switch[Y_LIMIT_MAX].pinNumber)
+		  {
 				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MAX].Port, Limit_Switch[Y_LIMIT_MAX].pinNumber);
 				  if (Limit_Switch[Y_LIMIT_MAX].CurrentState != limitswitch_state)
 					{
 					  Limit_Switch[Y_LIMIT_MAX].CurrentState = limitswitch_state;
 					}
-				  LimitSwitch_trig(Y_LIMIT_MAX);
+				  if (Limit_Switch[Y_LIMIT_MAX].CurrentState == 1)
+				  {
+				  xy_forces[Y_AXIS] = 0;
+				  Motors.SetMotorOutput(xy_forces);
+				  }
 				  EXTI->PR |= Limit_Switch[Y_LIMIT_MAX].pinNumber;
-	  }
-	  else if (GPIO_Pin == Limit_Switch[Y_LIMIT_MIN].pinNumber)
-	  {
-
+		  }
+		  else if (GPIO_Pin == Limit_Switch[Y_LIMIT_MIN].pinNumber)
+		  {
 				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MIN].Port, Limit_Switch[Y_LIMIT_MIN].pinNumber);
-					  if (Limit_Switch[Y_LIMIT_MIN].CurrentState != limitswitch_state)
-						{
-						  Limit_Switch[Y_LIMIT_MIN].CurrentState = limitswitch_state;
-						}
-					  LimitSwitch_trig(Y_LIMIT_MIN);
-					  EXTI->PR |= Limit_Switch[Y_LIMIT_MIN].pinNumber;
+				  if (Limit_Switch[Y_LIMIT_MIN].CurrentState != limitswitch_state)
+					{
+					  Limit_Switch[Y_LIMIT_MIN].CurrentState = limitswitch_state;
+					}
+				  if (Limit_Switch[Y_LIMIT_MIN].CurrentState == 1)
+				  {
+					  xy_forces[Y_AXIS] = 0;
+					  Motors.SetMotorOutput(xy_forces);
+				  }
 
-	  }
+				  EXTI->PR |= Limit_Switch[Y_LIMIT_MIN].pinNumber;
+
+		  }
 
 }
+
 
 void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef *hadc)
 {
@@ -107,7 +159,7 @@ void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef *hadc)
 											  analog_axis[RY_AXIS].minValue, analog_axis[RY_AXIS].maxValue);
 }
 
-extern QEncoder encoder;
+
 
 
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)

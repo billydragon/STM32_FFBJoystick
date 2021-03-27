@@ -16,6 +16,7 @@
 #include "types.h"
 
 
+
 Gains gain[2] __attribute__((section("ccmram")));
 EffectParams effects[2]  __attribute__((section("ccmram")));
 int32_t xy_forces[2]  __attribute__((section("ccmram"))) = { 0 };
@@ -26,20 +27,19 @@ MotorDriver Motors  __attribute__((section("ccmram")));
 
 TDF_BUTTON Buttons[NUM_OF_BUTTONS];
 TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
+
+TDF_BUTTON Estop_Sw;
+
 uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
 USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
 volatile bool RunFirstTime = true;
 
 double Setpoint[2], Input[2], Output[2];
-//double Kp=2, Ki=5, Kd=1;
-//double aggKp=4, aggKi=0.2, aggKd=1;
- double Kp[2];
- double Ki[2];
- double Kd[2];
+double Kp[2], Ki[2], Kd[2];
 
 PID  myPID[2] = {PID(&Input[X_AXIS], &Output[X_AXIS], &Setpoint[X_AXIS], Kp[X_AXIS], Ki[X_AXIS], Kd[X_AXIS], DIRECT),
-                PID(&Input[Y_AXIS], &Output[Y_AXIS], &Setpoint[Y_AXIS], Kp[Y_AXIS], Ki[Y_AXIS], Kd[Y_AXIS], DIRECT)};
+                 PID(&Input[Y_AXIS], &Output[Y_AXIS], &Setpoint[Y_AXIS], Kp[Y_AXIS], Ki[Y_AXIS], Kd[Y_AXIS], DIRECT)};
 
 Joystick_ Joystick (JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK, NUM_OF_BUTTONS, NUM_OF_HATSWITCH,
 						true, true, false, // X and Y, Z Axis
@@ -52,15 +52,14 @@ void Set_PID_Turnings()
 {
 	float temp_outputlimit = 0;
 
-  for(int ax =0; ax <2 ; ax++)
+  for(int ax = 0; ax < 2 ; ax++)
   {
   Kp[ax]= config.SysConfig.Pid[ax].Kp;
   Ki[ax] = config.SysConfig.Pid[ax].Ki;
   Kd[ax] = config.SysConfig.Pid[ax].Kd;
   myPID[ax].SetTunings(Kp[ax],Ki[ax],Kd[ax]);
   myPID[ax].SetSampleTime(config.SysConfig.Pid[ax].SampleTime);
-  temp_outputlimit = map(config.SysConfig.Pid[ax].MaxOutput,0,3000,0,32767);
-
+  temp_outputlimit = map(config.SysConfig.Pid[ax].MaxOutput, 0, 3000, 0, 32767);
   myPID[ax].SetOutputLimits(-temp_outputlimit, temp_outputlimit);
   myPID[ax].SetMode(AUTOMATIC);
   }
@@ -88,8 +87,24 @@ void init_Joystick ()
 
     }
 
-  Buttons[0].pinNumber = JBUTTON1_Pin;
-  Buttons[0].Port = JBUTTON1_GPIO_Port;
+	Buttons[0].pinNumber = JBUTTON1_Pin;
+	Buttons[0].Port = JBUTTON1_GPIO_Port;
+
+	Buttons[1].pinNumber = JBUTTON2_Pin;
+	Buttons[1].Port = JBUTTON2_GPIO_Port;
+
+	Buttons[2].pinNumber = JBUTTON3_Pin;
+	Buttons[2].Port = JBUTTON3_GPIO_Port;
+
+	Buttons[3].pinNumber = JBUTTON4_Pin;
+	Buttons[3].Port = JBUTTON4_GPIO_Port;
+
+	Buttons[4].pinNumber = JBUTTON5_Pin;
+	Buttons[4].Port = JBUTTON5_GPIO_Port;
+
+	Estop_Sw.pinNumber = E_STOP_SW_Pin;
+	Estop_Sw.Port = E_STOP_SW_GPIO_Port;
+
   Limit_Switch[X_LIMIT_MAX].pinNumber = X_LIMIT_MAX_Pin;
   Limit_Switch[X_LIMIT_MAX].Port = X_LIMIT_MAX_GPIO_Port;
   Limit_Switch[X_LIMIT_MIN].pinNumber = X_LIMIT_MIN_Pin;
@@ -361,6 +376,7 @@ void findCenter_Manual(int axis_num)
     }
     Send_Debug_Report();
   }
+
   HAL_GPIO_WritePin(GPIOD, LED2_Pin, GPIO_PIN_RESET);
   HAL_GPIO_WritePin(GPIOD, LED4_Pin, GPIO_PIN_RESET);
 
@@ -553,43 +569,5 @@ void CalculateMaxSpeedAndMaxAcceleration()
     }
 }
 
-void LimitSwitch_trig(uint8_t lms_type)
-{
-	if(RunFirstTime == false)
-		return;
 
-	switch(lms_type)
-	{
-		case X_LIMIT_MAX:
-			if(Limit_Switch[X_LIMIT_MAX].CurrentState == 1)
-			{
-				xy_forces[X_AXIS] = 0;
-				Motors.SetMotorOutput(xy_forces);
-			}
-			break;
-		case X_LIMIT_MIN:
-			if(Limit_Switch[X_LIMIT_MIN].CurrentState == 1)
-			{
-				xy_forces[X_AXIS] = 0;
-				Motors.SetMotorOutput(xy_forces);
-			}
-			break;
-		case Y_LIMIT_MAX:
-			if(Limit_Switch[Y_LIMIT_MAX].CurrentState == 1)
-			{
-				xy_forces[Y_AXIS] = 0;
-				Motors.SetMotorOutput(xy_forces);
-		}
-			break;
-		case Y_LIMIT_MIN:
-			if(Limit_Switch[Y_LIMIT_MIN].CurrentState == 1)
-			{
-				xy_forces[Y_AXIS] = 0;
-				Motors.SetMotorOutput(xy_forces);
-			}
-			break;
-		default:
-			break;
-	}
 
-}

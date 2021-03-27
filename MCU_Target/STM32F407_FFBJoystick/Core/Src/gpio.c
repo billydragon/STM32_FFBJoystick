@@ -58,10 +58,10 @@ void MX_GPIO_Init(void)
   HAL_GPIO_WritePin(SPI1_CS2_GPIO_Port, SPI1_CS2_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(MOTOR_X_EN_GPIO_Port, MOTOR_X_EN_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(MOTOR_Y_DIR_GPIO_Port, MOTOR_Y_DIR_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOB, MOTOR_Y_EN_Pin|MOTOR_X_DIR_Pin|GPIO_PIN_2|DAC856x_CLR_Pin
+  HAL_GPIO_WritePin(GPIOB, MOTOR_X_EN_Pin|MOTOR_Y_EN_Pin|MOTOR_X_DIR_Pin|DAC856x_CLR_Pin
                           |DAC856x_LDAC_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin Output Level */
@@ -70,7 +70,7 @@ void MX_GPIO_Init(void)
   /*Configure GPIO pins : PEPin PEPin PEPin PEPin
                            PEPin */
   GPIO_InitStruct.Pin = JBUTTON2_Pin|JBUTTON3_Pin|JBUTTON4_Pin|JBUTTON5_Pin
-                          |JBUTTON6_Pin;
+                          |E_STOP_SW_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOE, &GPIO_InitStruct);
@@ -102,28 +102,28 @@ void MX_GPIO_Init(void)
   HAL_GPIO_Init(SPI1_CS2_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PtPin */
-  GPIO_InitStruct.Pin = MOTOR_X_EN_Pin;
+  GPIO_InitStruct.Pin = MOTOR_Y_DIR_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(MOTOR_X_EN_GPIO_Port, &GPIO_InitStruct);
+  HAL_GPIO_Init(MOTOR_Y_DIR_GPIO_Port, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PBPin PBPin */
-  GPIO_InitStruct.Pin = MOTOR_Y_EN_Pin|MOTOR_X_DIR_Pin;
+  GPIO_InitStruct.Pin = MOTOR_X_EN_Pin|MOTOR_Y_EN_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_HIGH;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
-  /*Configure GPIO pins : PB2 PBPin PBPin */
-  GPIO_InitStruct.Pin = GPIO_PIN_2|DAC856x_CLR_Pin|DAC856x_LDAC_Pin;
+  /*Configure GPIO pins : PBPin PBPin PBPin */
+  GPIO_InitStruct.Pin = MOTOR_X_DIR_Pin|DAC856x_CLR_Pin|DAC856x_LDAC_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);
 
   /*Configure GPIO pins : PBPin PBPin PBPin PBPin */
-  GPIO_InitStruct.Pin = X_LIMIT_MIN_Pin|X_LIMIT_MAX_Pin|Y_LIMIT_MIN_Pin|Y_LIMIT_MAX_Pin;
+  GPIO_InitStruct.Pin = X_LIMIT_MIN_Pin|Y_LIMIT_MIN_Pin|X_LIMIT_MAX_Pin|Y_LIMIT_MAX_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
   GPIO_InitStruct.Pull = GPIO_PULLUP;
   HAL_GPIO_Init(GPIOB, &GPIO_InitStruct);

@@ -94,7 +94,7 @@ typedef struct //PID state
   extern TDF_BUTTON Buttons[NUM_OF_BUTTONS];
   extern uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
   extern TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
-
+  extern TDF_BUTTON Estop_Sw;
 
   void init_Joystick();
   void start_joystick(void);
@@ -108,5 +108,5 @@ typedef struct //PID state
   void Set_RunFirstTime_state(bool state);
   void Send_Debug_Report();
   void findCenter_Auto();
-  void LimitSwitch_trig(uint8_t lms_type);
+
 #endif /* INC_FFBMAIN_H_ */
