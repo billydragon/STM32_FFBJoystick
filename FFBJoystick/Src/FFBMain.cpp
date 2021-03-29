@@ -430,7 +430,8 @@ void findCenter_Auto()
 	  encoder.axis[X_AXIS].maxValue =0;
 	  encoder.setPos(X_AXIS, 0);
 	  Motors.MotorDriverOn(X_AXIS);
-	  //Motors.MotorDriverOn(Y_AXIS);
+	  Motors.MotorDriverOn(Y_AXIS);
+	  HAL_Delay(2000);
 
 	  do //X MAX
 	  {
@@ -443,6 +444,7 @@ void findCenter_Auto()
 
 	  xy_forces[X_AXIS] = 0;
 	  Motors.SetMotorOutput(xy_forces);
+	  HAL_Delay(500);
 
 	  do //X MIN
 	 	  {
@@ -455,7 +457,7 @@ void findCenter_Auto()
 
 	     xy_forces[X_AXIS] = 0;
 	     Motors.SetMotorOutput(xy_forces);
-
+	     HAL_Delay(500);
 	    Axis_Center= (encoder.axis[X_AXIS].minValue + encoder.axis[X_AXIS].maxValue)/2 ;
 	    Axis_Range =  abs(encoder.axis[X_AXIS].minValue) + abs(encoder.axis[X_AXIS].maxValue);
 
@@ -467,12 +469,12 @@ void findCenter_Auto()
 					Joystick.setXAxisRange(encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
 					Joystick.setXAxis(encoder.axis[X_AXIS].currentPosition);
 					Motors.SetMotorOutput(xy_forces);
-
+					HAL_Delay(500);
 	//***************************************************************************************
 				encoder.axis[Y_AXIS].minValue =0;
 				encoder.axis[Y_AXIS].maxValue =0;
 				encoder.setPos(Y_AXIS, 0);
-				 Motors.MotorDriverOn(Y_AXIS);
+				 //Motors.MotorDriverOn(Y_AXIS);
 
 				  do //Y MAX
 				  {
@@ -485,6 +487,7 @@ void findCenter_Auto()
 				  }while (Limit_Switch[Y_LIMIT_MAX].CurrentState == 0);
 				  xy_forces[Y_AXIS] = 0;
 				  Motors.SetMotorOutput(xy_forces);
+				  HAL_Delay(500);
 				  do //Y MIN
 					  {
 						xy_forces[Y_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
@@ -496,6 +499,8 @@ void findCenter_Auto()
 
 					 xy_forces[Y_AXIS] = 0;
 					 Motors.SetMotorOutput(xy_forces);
+					 HAL_Delay(500);
+
 					Axis_Center= (encoder.axis[Y_AXIS].minValue + encoder.axis[Y_AXIS].maxValue)/2 ;
 					Axis_Range =  abs(encoder.axis[Y_AXIS].minValue) + abs(encoder.axis[Y_AXIS].maxValue);
 					gotoPosition(Y_AXIS, Axis_Center);    //goto center X
@@ -505,6 +510,7 @@ void findCenter_Auto()
 					Joystick.setYAxisRange(encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
 					Joystick.setYAxis(encoder.axis[Y_AXIS].currentPosition);
 					Motors.SetMotorOutput(xy_forces);
+					HAL_Delay(500);
 
 }
 

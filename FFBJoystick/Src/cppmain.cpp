@@ -67,8 +67,12 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 		}
         if(Estop_Sw.CurrentState == 1)
         {
+        	xy_forces[0] = 0;
+        	xy_forces[1] = 0;
+        	Motors.SetMotorOutput(xy_forces);
         	Motors.MotorDriverOff(X_AXIS);
         	Motors.MotorDriverOff(Y_AXIS);
+        	Error_Handler();
         }
 
         EXTI->PR |= Estop_Sw.pinNumber;
@@ -93,11 +97,8 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 					{
 					  Limit_Switch[X_LIMIT_MAX].CurrentState = limitswitch_state;
 					}
-				  if(Limit_Switch[X_LIMIT_MAX].CurrentState == 1)
-				  {
-					  xy_forces[X_AXIS] = 0;
-					 				  Motors.SetMotorOutput(xy_forces);
-				  }
+
+
 
 				  EXTI->PR |= Limit_Switch[X_LIMIT_MAX].pinNumber;
 
@@ -110,11 +111,7 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 					{
 					  Limit_Switch[X_LIMIT_MIN].CurrentState = limitswitch_state;
 					}
-				  if (Limit_Switch[X_LIMIT_MIN].CurrentState == 1)
-				  	{
-					  xy_forces[X_AXIS] = 0;
-					  Motors.SetMotorOutput(xy_forces);
-				  	}
+
 				  EXTI->PR |= Limit_Switch[X_LIMIT_MIN].pinNumber;
 		  }
 		  else if(GPIO_Pin == Limit_Switch[Y_LIMIT_MAX].pinNumber)
@@ -124,11 +121,7 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 					{
 					  Limit_Switch[Y_LIMIT_MAX].CurrentState = limitswitch_state;
 					}
-				  if (Limit_Switch[Y_LIMIT_MAX].CurrentState == 1)
-				  {
-				  xy_forces[Y_AXIS] = 0;
-				  Motors.SetMotorOutput(xy_forces);
-				  }
+
 				  EXTI->PR |= Limit_Switch[Y_LIMIT_MAX].pinNumber;
 		  }
 		  else if (GPIO_Pin == Limit_Switch[Y_LIMIT_MIN].pinNumber)
@@ -138,11 +131,6 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 					{
 					  Limit_Switch[Y_LIMIT_MIN].CurrentState = limitswitch_state;
 					}
-				  if (Limit_Switch[Y_LIMIT_MIN].CurrentState == 1)
-				  {
-					  xy_forces[Y_AXIS] = 0;
-					  Motors.SetMotorOutput(xy_forces);
-				  }
 
 				  EXTI->PR |= Limit_Switch[Y_LIMIT_MIN].pinNumber;
 
