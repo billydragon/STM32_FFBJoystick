@@ -94,11 +94,11 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     		force = RampForceCalculator (effect);
     		if(effect.useEnvelope)
     		{
-    			force -= ApplyEnvelope(effect, (int32_t)force * angle_ratio);
+    			force -= ApplyEnvelope(effect, (int32_t)force * _gains.rampGain * angle_ratio) ;
     		}
     		else
     		{
-    			force -= force * angle_ratio;
+    			force -= force *  _gains.rampGain * angle_ratio;
     		}
       break;
     case USB_EFFECT_SQUARE: //3
@@ -117,8 +117,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     		force = SawtoothUpForceCalculator (effect) * _gains.sawtoothupGain* angle_ratio;
       break;
     case USB_EFFECT_SPRING: //8
-			force = ConditionForceCalculator (effect, NormalizeRange (_effect_params.springPosition,
-					  	  	  	  	  	  	  _effect_params.springMaxPosition),condition) * _gains.springGain;
+			force = ConditionForceCalculator (effect, NormalizeRange (_effect_params.springPosition, _effect_params.springMaxPosition),condition) * _gains.springGain;
 
 			if (useForceDirectionForConditionEffect)
 				{
@@ -126,8 +125,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_DAMPER: //9
-			force = ConditionForceCalculator ( effect, NormalizeRange (_effect_params.damperVelocity,
-												_effect_params.damperMaxVelocity), condition) * _gains.damperGain;
+			force = ConditionForceCalculator ( effect, NormalizeRange (_effect_params.damperVelocity, _effect_params.damperMaxVelocity), condition) * _gains.damperGain;
 
 			if (useForceDirectionForConditionEffect)
 				{
@@ -135,8 +133,8 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_INERTIA: //10
-    			effect.conditions[axis].negativeSaturation = INERTIA_SATURATION;
-    			effect.conditions[axis].positiveSaturation = INERTIA_SATURATION;
+    			//effect.conditions[axis].negativeSaturation = INERTIA_SATURATION;
+    			//effect.conditions[axis].positiveSaturation = INERTIA_SATURATION;
 		  	if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
 			{
 		  			force = ConditionForceCalculator (effect,abs( NormalizeRange (_effect_params.inertiaAcceleration,
@@ -154,8 +152,8 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_FRICTION: //11
-    			effect.conditions[axis].negativeSaturation = FRICTION_SATURATION;
-    			effect.conditions[axis].positiveSaturation = FRICTION_SATURATION;
+    			//effect.conditions[axis].negativeSaturation = FRICTION_SATURATION;
+    			//effect.conditions[axis].positiveSaturation = FRICTION_SATURATION;
     		force = ConditionForceCalculator(effect, NormalizeRange(_effect_params.frictionPositionChange,
     										_effect_params.frictionMaxPositionChange), condition) * _gains.frictionGain;
 
@@ -217,9 +215,10 @@ int32_t ConstantForceCalculator (volatile TEffectState &effect)
 
 int32_t RampForceCalculator (volatile TEffectState &effect)
 {
-
-  int32_t rampForce = effect.startMagnitude + effect.elapsedTime * (effect.endMagnitude - effect.startMagnitude)/ effect.duration;
-  //rampForce *= (int32_t)(1 + effect.gain) >> 8;
+	uint32_t duration = effect.duration;
+	duration = (duration == 0) ? 0x7FFF : duration; // prevent div zero
+  int32_t rampForce = effect.startMagnitude + effect.elapsedTime * (effect.endMagnitude - effect.startMagnitude)/ duration;
+  rampForce *= (int32_t)(1 + effect.gain) >> 8;
 
   return rampForce;
 }
@@ -234,8 +233,8 @@ int32_t SquareForceCalculator (volatile TEffectState &effect)
 
   int32_t maxMagnitude = offset + magnitude;
   int32_t minMagnitude = offset - magnitude;
-  //uint32_t phasetime = (phase * period) / 255;
-  uint32_t phasetime = (phase * period) / 35999;
+  uint32_t phasetime = (phase * period) / 255;
+  //uint32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   uint32_t reminder = timeTemp % period;
   int32_t tempforce;
@@ -253,8 +252,8 @@ int32_t SinForceCalculator (volatile TEffectState &effect)
   float phase = effect.phase;
   float timeTemp = effect.elapsedTime;
   float period = effect.period;
-  //  float angle = ((timeTemp / period) + (phase / 255) * period) * 2 * PI;
-  float angle = ((timeTemp / period) * 2 * PI + (float) (phase / 36000));
+  float angle = ((timeTemp / period) + (phase / 255) * period) * 2 * PI;
+  //float angle = ((timeTemp / period) * 2 * PI + (float) (phase / 36000));
   float sine = sin (angle);
   float tempforce = sine * magnitude;
   tempforce += offset;
@@ -272,8 +271,8 @@ int32_t TriangleForceCalculator (volatile TEffectState &effect)
 
   float maxMagnitude = offset + magnitude;
   float minMagnitude = offset - magnitude;
-  //uint32_t phasetime = (phase * period) / 255;
-  uint32_t phasetime = (phase * period) / 35999;
+  uint32_t phasetime = (phase * period) / 255;
+  //uint32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   float reminder = timeTemp % period;
   float slope = ((maxMagnitude - minMagnitude) * 2) / periodF;
@@ -297,8 +296,8 @@ int32_t SawtoothDownForceCalculator (volatile TEffectState &effect)
 
   float maxMagnitude = offset + magnitude;
   float minMagnitude = offset - magnitude;
-  //int32_t phasetime = (phase * period) / 255;
-  int32_t phasetime = (phase * period) / 35999;
+  int32_t phasetime = (phase * period) / 255;
+  //int32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   float reminder = timeTemp % period;
   float slope = (maxMagnitude - minMagnitude) / periodF;
@@ -319,8 +318,8 @@ int32_t SawtoothUpForceCalculator (volatile TEffectState &effect)
 
   float maxMagnitude = offset + magnitude;
   float minMagnitude = offset - magnitude;
-  //int32_t phasetime = (phase * period) / 255;
-  int32_t phasetime = (phase * period) / 35999;
+  int32_t phasetime = (phase * period) / 255;
+  //int32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   float reminder = timeTemp % period;
   float slope = (maxMagnitude - minMagnitude) / periodF;
@@ -350,16 +349,16 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, u
 
   if (metric < (cpOffset - deadBand))
     {
-      //tempForce = (metric - (float) 1.00 * (cpOffset - deadBand) / 10000) * negativeCoefficient;
+      tempForce = (metric - (float) 1.00 * (cpOffset - deadBand) / 10000) * negativeCoefficient;
+      //tempForce = (metric - (float) 0.70 * (cpOffset - deadBand) / 10000) * negativeCoefficient;
 
-      tempForce = (metric - (float) 0.4f * (cpOffset - deadBand)) * negativeCoefficient;
       tempForce = (tempForce < -negativeSaturation ? -negativeSaturation : tempForce);
 
     }
   else if (metric > (cpOffset + deadBand))
     {
-      //tempForce = (metric - (float) 1.00 * (cpOffset + deadBand) / 10000) * positiveCoefficient;
-      tempForce = (metric - (float) 0.40f * (cpOffset + deadBand)) * positiveCoefficient;
+      tempForce = (metric - (float) 1.00 * (cpOffset + deadBand) / 10000) * positiveCoefficient;
+      //tempForce = (metric - (float) 0.70 * (cpOffset + deadBand) / 10000) * positiveCoefficient;
       tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
     }
 	  //else return 0;
