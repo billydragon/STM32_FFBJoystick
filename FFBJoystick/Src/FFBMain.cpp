@@ -35,6 +35,11 @@ USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
 volatile bool RunFirstTime = true;
 
+#define GOBACK_KP		30
+#define GOBACK_KI		0
+#define GOBACK_KD		0
+#define GOBACK_SAMPLETIME	0.01
+
 double Setpoint[2], Input[2], Output[2];
 double Kp[2], Ki[2], Kd[2];
 
@@ -62,6 +67,7 @@ void Set_PID_Turnings()
   temp_outputlimit = map(config.SysConfig.Pid[ax].MaxOutput, 0, 3000, 0, 32767);
   myPID[ax].SetOutputLimits(-temp_outputlimit, temp_outputlimit);
   myPID[ax].SetMode(AUTOMATIC);
+  myPID[ax].SetControllerDirection(DIRECT);
   }
 
 }
@@ -128,6 +134,84 @@ void init_Joystick ()
 
 }
 
+void Update_Joystick_Position()
+{
+	for (int i = 0; i < NUM_OF_BUTTONS; i++)
+	    {
+	      if (Buttons[i].LastState != Buttons[i].CurrentState)
+		{
+		  Buttons[i].LastState = Buttons[i].CurrentState;
+		  Joystick.setButton (i, Buttons[i].CurrentState);
+		}
+	    }
+
+	  encoder.updatePosition (X_AXIS);
+
+	  if (encoder.axis[X_AXIS].currentPosition > encoder.axis[X_AXIS].maxValue)
+	    {
+		  Correct_Joystick_Positions(X_AXIS, encoder.axis[X_AXIS].maxValue);
+	      Joystick.setXAxis (encoder.axis[X_AXIS].maxValue);
+	    }
+	  else if (encoder.axis[X_AXIS].currentPosition < encoder.axis[X_AXIS].minValue)
+	    {
+		  Correct_Joystick_Positions(X_AXIS, encoder.axis[X_AXIS].minValue);
+	      Joystick.setXAxis (encoder.axis[X_AXIS].minValue);
+	    }
+	  else
+	    {
+	      Joystick.setXAxis (encoder.axis[X_AXIS].currentPosition);
+	    }
+
+	      encoder.updatePosition (Y_AXIS);
+
+	  if (encoder.axis[Y_AXIS].currentPosition > encoder.axis[Y_AXIS].maxValue)
+	    {
+		  Correct_Joystick_Positions(Y_AXIS, encoder.axis[Y_AXIS].maxValue);
+	      Joystick.setYAxis (encoder.axis[Y_AXIS].maxValue);
+	    }
+	  else if (encoder.axis[Y_AXIS].currentPosition < encoder.axis[Y_AXIS].minValue)
+	    {
+		  Correct_Joystick_Positions(Y_AXIS, encoder.axis[Y_AXIS].minValue);
+	      Joystick.setYAxis (encoder.axis[Y_AXIS].minValue);
+	    }
+	  else
+	    {
+	      Joystick.setYAxis (encoder.axis[Y_AXIS].currentPosition);
+	    }
+
+	  if (analog_axis[RX_AXIS].currentPosition > analog_axis[RX_AXIS].maxValue)
+	    {
+	      Joystick.setRxAxis (analog_axis[RX_AXIS].maxValue);
+	    }
+	  else if (analog_axis[RX_AXIS].currentPosition < analog_axis[RX_AXIS].minValue)
+	    {
+	      Joystick.setRxAxis (analog_axis[RX_AXIS].minValue);
+	    }
+	  else
+	    {
+	      Joystick.setRxAxis (analog_axis[RX_AXIS].currentPosition);
+
+	    }
+
+	  if (analog_axis[RY_AXIS].currentPosition > analog_axis[RY_AXIS].maxValue)
+	    {
+	      Joystick.setRyAxis (analog_axis[RY_AXIS].maxValue);
+	    }
+	  else if (analog_axis[RY_AXIS].currentPosition < analog_axis[RY_AXIS].minValue)
+	    {
+	      Joystick.setRyAxis (analog_axis[RY_AXIS].minValue);
+	    }
+	  else
+	    {
+	      Joystick.setRyAxis (analog_axis[RY_AXIS].currentPosition);
+
+	    }
+
+}
+
+
+
+
 void start_joystick ()
 {
 
@@ -145,79 +229,17 @@ void start_joystick ()
 			HAL_Delay(500);
 		}
 
+		gotoPosition(X_AXIS, 0);
+		gotoPosition(Y_AXIS, 0);
+
 		RunFirstTime = false;
 	}
 
-  for (int i = 0; i < NUM_OF_BUTTONS; i++)
-    {
-      if (Buttons[i].LastState != Buttons[i].CurrentState)
-	{
-	  Buttons[i].LastState = Buttons[i].CurrentState;
-	  Joystick.setButton (i, Buttons[i].CurrentState);
-	}
-    }
+	Update_Joystick_Position();
+	SetEffects ();
+	Set_Gains ();
+	getForce (xy_forces);
 
-  encoder.updatePosition (X_AXIS);
-
-  if (encoder.axis[X_AXIS].currentPosition > encoder.axis[X_AXIS].maxValue)
-    {
-      Joystick.setXAxis (encoder.axis[X_AXIS].maxValue);
-    }
-  else if (encoder.axis[X_AXIS].currentPosition < encoder.axis[X_AXIS].minValue)
-    {
-      Joystick.setXAxis (encoder.axis[X_AXIS].minValue);
-    }
-  else
-    {
-      Joystick.setXAxis (encoder.axis[X_AXIS].currentPosition);
-    }
-
-  encoder.updatePosition (Y_AXIS);
-  if (encoder.axis[Y_AXIS].currentPosition > encoder.axis[Y_AXIS].maxValue)
-    {
-      Joystick.setYAxis (encoder.axis[Y_AXIS].maxValue);
-    }
-  else if (encoder.axis[Y_AXIS].currentPosition < encoder.axis[Y_AXIS].minValue)
-    {
-      Joystick.setYAxis (encoder.axis[Y_AXIS].minValue);
-    }
-  else
-    {
-      Joystick.setYAxis (encoder.axis[Y_AXIS].currentPosition);
-
-    }
-
-  if (analog_axis[RX_AXIS].currentPosition > analog_axis[RX_AXIS].maxValue)
-    {
-      Joystick.setRxAxis (analog_axis[RX_AXIS].maxValue);
-    }
-  else if (analog_axis[RX_AXIS].currentPosition < analog_axis[RX_AXIS].minValue)
-    {
-      Joystick.setRxAxis (analog_axis[RX_AXIS].minValue);
-    }
-  else
-    {
-      Joystick.setRxAxis (analog_axis[RX_AXIS].currentPosition);
-
-    }
-
-  if (analog_axis[RY_AXIS].currentPosition > analog_axis[RY_AXIS].maxValue)
-    {
-      Joystick.setRyAxis (analog_axis[RY_AXIS].maxValue);
-    }
-  else if (analog_axis[RY_AXIS].currentPosition < analog_axis[RY_AXIS].minValue)
-    {
-      Joystick.setRyAxis (analog_axis[RY_AXIS].minValue);
-    }
-  else
-    {
-      Joystick.setRyAxis (analog_axis[RY_AXIS].currentPosition);
-
-    }
-
-  SetEffects ();
-  Set_Gains ();
-  getForce (xy_forces);
   if (config.SysConfig.AppConfig.Swap_xy_forces == true)
     {
       int32_t temp_force = xy_forces[1];
@@ -225,25 +247,6 @@ void start_joystick ()
       xy_forces[0] = temp_force;
 
     }
-
-
-  if (encoder.axis[X_AXIS].currentPosition >= encoder.axis[X_AXIS].maxValue)
-    {
-      xy_forces[X_AXIS] = XY_FORCE_MIN;
-    }
-  else if (encoder.axis[X_AXIS].currentPosition <= encoder.axis[X_AXIS].minValue)
-    {
-      xy_forces[X_AXIS] = XY_FORCE_MAX;
-    }
-  if (encoder.axis[Y_AXIS].currentPosition >= encoder.axis[Y_AXIS].maxValue)
-    {
-      xy_forces[Y_AXIS] = XY_FORCE_MIN;
-    }
-  else if (encoder.axis[Y_AXIS].currentPosition <= encoder.axis[Y_AXIS].minValue)
-    {
-      xy_forces[Y_AXIS] = XY_FORCE_MAX;
-    }
-
 
   Motors.SetMotorOutput(xy_forces);
 
@@ -389,20 +392,18 @@ void findCenter_Manual(int axis_num)
 				gotoPosition(X_AXIS, Axis_Center);    //goto center X
 				//SetZero_Encoder(X_AXIS);
 				encoder.setPos(X_AXIS, 0);
-				encoder.axis[X_AXIS].maxValue =(Axis_Range - AXIS_BACKWARD)/2;
+				encoder.axis[X_AXIS].maxValue =(Axis_Range - AXIS_BACKWARD_X)/2;
 				encoder.axis[X_AXIS].minValue = -encoder.axis[X_AXIS].maxValue;
 				Joystick.setXAxisRange(encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
 				Joystick.setXAxis(encoder.axis[X_AXIS].currentPosition);
-				Motors.SetMotorOutput(xy_forces);
 				break;
 			case Y_AXIS:
 				gotoPosition(Y_AXIS, Axis_Center);    //goto center X
 				encoder.setPos(Y_AXIS, 0);
-				encoder.axis[Y_AXIS].maxValue = (Axis_Range - AXIS_BACKWARD)/2;
+				encoder.axis[Y_AXIS].maxValue = (Axis_Range - AXIS_BACKWARD_Y)/2;
 				encoder.axis[Y_AXIS].minValue = -encoder.axis[Y_AXIS].maxValue;
 				Joystick.setYAxisRange(encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
 				Joystick.setYAxis(encoder.axis[Y_AXIS].currentPosition);
-				Motors.SetMotorOutput(xy_forces);
 				break;
 			default:
 				break;
@@ -421,7 +422,6 @@ void findCenter_Auto()
 	  xy_forces[X_AXIS] = 0;
 	  xy_forces[Y_AXIS] = 0;
 
-
 	  Motors.SetMotorOutput(xy_forces);
 	  Motors.MotorDriverOff(X_AXIS);
 	  Motors.MotorDriverOff(Y_AXIS);
@@ -432,20 +432,20 @@ void findCenter_Auto()
 	  Motors.MotorDriverOn(X_AXIS);
 	  Motors.MotorDriverOn(Y_AXIS);
 	  HAL_Delay(2000);
-
+	  Limit_Switch[X_LIMIT_MAX].CurrentState = 0;
 	  do //X MAX
 	  {
+
 		xy_forces[X_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 	    encoder.updatePosition(X_AXIS);
 		AutoCalibration(X_AXIS);
 	    Send_Debug_Report();
 	  }while (Limit_Switch[X_LIMIT_MAX].CurrentState == 0);
-
 	  xy_forces[X_AXIS] = 0;
 	  Motors.SetMotorOutput(xy_forces);
-	  HAL_Delay(500);
 
+	  Limit_Switch[X_LIMIT_MIN].CurrentState = 0;
 	  do //X MIN
 	 	  {
 	 		xy_forces[X_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
@@ -454,28 +454,26 @@ void findCenter_Auto()
 	 		AutoCalibration(X_AXIS);
 	 	    Send_Debug_Report();
 	 	  }while (Limit_Switch[X_LIMIT_MIN].CurrentState == 0);
-
 	     xy_forces[X_AXIS] = 0;
 	     Motors.SetMotorOutput(xy_forces);
-	     HAL_Delay(500);
+
 	    Axis_Center= (encoder.axis[X_AXIS].minValue + encoder.axis[X_AXIS].maxValue)/2 ;
 	    Axis_Range =  abs(encoder.axis[X_AXIS].minValue) + abs(encoder.axis[X_AXIS].maxValue);
 
 					gotoPosition(X_AXIS, Axis_Center);    //goto center X
-					//SetZero_Encoder(X_AXIS);
 					encoder.setPos(X_AXIS, 0);
-					encoder.axis[X_AXIS].maxValue =(Axis_Range - AXIS_BACKWARD)/2;
+					encoder.axis[X_AXIS].maxValue =(Axis_Range - AXIS_BACKWARD_X)/2;
 					encoder.axis[X_AXIS].minValue = -encoder.axis[X_AXIS].maxValue;
 					Joystick.setXAxisRange(encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
 					Joystick.setXAxis(encoder.axis[X_AXIS].currentPosition);
-					Motors.SetMotorOutput(xy_forces);
-					HAL_Delay(500);
+
+					HAL_Delay(1000);
 	//***************************************************************************************
 				encoder.axis[Y_AXIS].minValue =0;
 				encoder.axis[Y_AXIS].maxValue =0;
 				encoder.setPos(Y_AXIS, 0);
 				 //Motors.MotorDriverOn(Y_AXIS);
-
+				Limit_Switch[Y_LIMIT_MAX].CurrentState = 0;
 				  do //Y MAX
 				  {
 					xy_forces[Y_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
@@ -487,7 +485,7 @@ void findCenter_Auto()
 				  }while (Limit_Switch[Y_LIMIT_MAX].CurrentState == 0);
 				  xy_forces[Y_AXIS] = 0;
 				  Motors.SetMotorOutput(xy_forces);
-				  HAL_Delay(500);
+				  Limit_Switch[Y_LIMIT_MIN].CurrentState = 0;
 				  do //Y MIN
 					  {
 						xy_forces[Y_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
@@ -499,18 +497,16 @@ void findCenter_Auto()
 
 					 xy_forces[Y_AXIS] = 0;
 					 Motors.SetMotorOutput(xy_forces);
-					 HAL_Delay(500);
 
 					Axis_Center= (encoder.axis[Y_AXIS].minValue + encoder.axis[Y_AXIS].maxValue)/2 ;
 					Axis_Range =  abs(encoder.axis[Y_AXIS].minValue) + abs(encoder.axis[Y_AXIS].maxValue);
 					gotoPosition(Y_AXIS, Axis_Center);    //goto center X
 					encoder.setPos(Y_AXIS, 0);
-					encoder.axis[Y_AXIS].maxValue = (Axis_Range - AXIS_BACKWARD)/2;
+					encoder.axis[Y_AXIS].maxValue = (Axis_Range - AXIS_BACKWARD_Y)/2;
 					encoder.axis[Y_AXIS].minValue = -encoder.axis[Y_AXIS].maxValue;
 					Joystick.setYAxisRange(encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
 					Joystick.setYAxis(encoder.axis[Y_AXIS].currentPosition);
-					Motors.SetMotorOutput(xy_forces);
-					HAL_Delay(500);
+					HAL_Delay(1000);
 
 }
 
@@ -523,11 +519,10 @@ void gotoPosition(int axis_num, int32_t targetPosition) {
 
 
   Setpoint[axis_num] = targetPosition;
+  Set_PID_Turnings();
   while (encoder.axis[axis_num].currentPosition != targetPosition)
   {
 
-	Set_PID_Turnings();
-    Setpoint[axis_num] = targetPosition;
     encoder.updatePosition(axis_num);
     Input[axis_num] = encoder.axis[axis_num].currentPosition ;
     myPID[axis_num].Compute();
@@ -551,6 +546,52 @@ void gotoPosition(int axis_num, int32_t targetPosition) {
   }
   xy_forces[axis_num] = 0;
   Motors.SetMotorOutput(xy_forces);
+}
+
+void Correct_Joystick_Positions(int axis_num, int32_t targetPosition)
+{
+
+	int32_t Target = targetPosition;
+
+	myPID[axis_num].SetTunings(GOBACK_KP, GOBACK_KI, GOBACK_KD);
+	myPID[axis_num].SetSampleTime(GOBACK_SAMPLETIME);
+	myPID[axis_num].SetOutputLimits(-32767, 32767);
+	myPID[axis_num].SetMode(AUTOMATIC);
+	encoder.updatePosition(axis_num);
+	Input[axis_num] = encoder.axis[axis_num].currentPosition ;
+
+	//printf("Target: %ld \n", Target);
+
+
+	if(Target > 0)
+	{
+			do
+			{
+				encoder.updatePosition(axis_num);
+				myPID[axis_num].Compute();
+				xy_forces[axis_num] = Output[axis_num];
+				Motors.SetMotorOutput(xy_forces);
+				Send_Debug_Report();
+			}while(encoder.axis[axis_num].currentPosition >= Target);
+
+	}
+
+	if(Target < 0)
+		{
+			do
+			{
+				encoder.updatePosition(axis_num);
+				myPID[axis_num].Compute();
+				xy_forces[axis_num] = Output[axis_num];
+				Motors.SetMotorOutput(xy_forces);
+				Send_Debug_Report();
+			}while(encoder.axis[axis_num].currentPosition <= Target);
+
+		}
+
+		xy_forces[axis_num] = 0;
+		Motors.SetMotorOutput(xy_forces);
+
 }
 
 

@@ -78,7 +78,8 @@ extern "C"
 
 #define REPORT_FORCES_DATA		0x01
 #define REPORT_JOYSTICK_DATA	0x02
-#define AXIS_BACKWARD   		100
+#define AXIS_BACKWARD_X   		300
+#define AXIS_BACKWARD_Y   		200
 
 #define USBLOG_INTERVAL		10000
 
@@ -108,5 +109,7 @@ typedef struct //PID state
   void Set_RunFirstTime_state(bool state);
   void Send_Debug_Report();
   void findCenter_Auto();
+  void Update_Joystick_Position();
+  void Correct_Joystick_Positions(int axis_num, int32_t targetPosition);
 
 #endif /* INC_FFBMAIN_H_ */
