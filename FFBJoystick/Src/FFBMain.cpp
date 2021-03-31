@@ -35,8 +35,8 @@ USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
 volatile bool RunFirstTime = true;
 
-#define GOBACK_KP		30
-#define GOBACK_KI		0
+#define GOBACK_KP		20
+#define GOBACK_KI		1
 #define GOBACK_KD		0
 #define GOBACK_SAMPLETIME	0.01
 
