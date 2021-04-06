@@ -240,13 +240,14 @@ void start_joystick ()
 	Set_Gains ();
 	getForce (xy_forces);
 
-  if (config.SysConfig.AppConfig.Swap_xy_forces == true)
+  if (config.SysConfig.AppConfig.AutoCenter == true)
     {
-      int32_t temp_force = xy_forces[1];
-      xy_forces[1] = xy_forces[0];
-      xy_forces[0] = temp_force;
-
+	  if(xy_forces[X_AXIS] == 0)
+	 	  xy_forces[X_AXIS] = AutoCenter_spring(X_AXIS);
+	  if(xy_forces[Y_AXIS] == 0)
+	   	  xy_forces[Y_AXIS] = AutoCenter_spring(Y_AXIS);
     }
+
 
   Motors.SetMotorOutput(xy_forces);
 
@@ -259,14 +260,14 @@ void Send_Debug_Report()
 	if(micros()- USBLog_timer > USBLOG_INTERVAL)
 		{
 
-			  USBLog.xy_forces[0] = xy_forces[0];
-			  USBLog.xy_forces[1] = xy_forces[1];
-			  USBLog.current_pos[0] = constrain(encoder.axis[X_AXIS].currentPosition, encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
-			  USBLog.current_pos[1] = constrain(encoder.axis[Y_AXIS].currentPosition, encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
-			  USBLog.axis_min[0] = encoder.axis[X_AXIS].minValue;
-			  USBLog.axis_max[0] = encoder.axis[X_AXIS].maxValue;
-			  USBLog.axis_min[1] = encoder.axis[Y_AXIS].minValue;
-			  USBLog.axis_max[1] = encoder.axis[Y_AXIS].maxValue;
+			  USBLog.xy_forces[X_AXIS] = xy_forces[X_AXIS];
+			  USBLog.xy_forces[Y_AXIS] = xy_forces[Y_AXIS];
+			  USBLog.current_pos[X_AXIS] = constrain(encoder.axis[X_AXIS].currentPosition, encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
+			  USBLog.current_pos[Y_AXIS] = constrain(encoder.axis[Y_AXIS].currentPosition, encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
+			  USBLog.axis_min[X_AXIS] = encoder.axis[X_AXIS].minValue;
+			  USBLog.axis_max[X_AXIS] = encoder.axis[X_AXIS].maxValue;
+			  USBLog.axis_min[Y_AXIS] = encoder.axis[Y_AXIS].minValue;
+			  USBLog.axis_max[Y_AXIS] = encoder.axis[Y_AXIS].maxValue;
 
 			  uint8_t fReport[USBD_CUSTOMHID_INREPORT_BUF_SIZE] = { 0 };
 			  uint8_t offset = 0;
@@ -283,31 +284,19 @@ void SetEffects ()
 {
 	CalculateMaxSpeedAndMaxAcceleration ();
 
-  effects[X_AXIS].springPosition = encoder.axis[X_AXIS].currentPosition;
-  effects[Y_AXIS].springPosition = encoder.axis[Y_AXIS].currentPosition;
+	for (int ax = 0; ax <2; ax++)
+	{
+		 effects[ax].springPosition = encoder.axis[ax].currentPosition;
+		 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
+		 effects[ax].frictionPositionChange = encoder.axis[ax].positionChange; //lastX - posX;
+		 effects[ax].frictionMaxPositionChange = encoder.axis[ax].maxPositionChange;
+		 effects[ax].inertiaAcceleration = encoder.axis[ax].currentAcceleration;
+		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].maxAcceleration;
+		 effects[ax].damperVelocity = encoder.axis[ax].currentVelocity;
+		 effects[ax].damperMaxVelocity = encoder.axis[ax].maxVelocity;
+	}
 
-  effects[X_AXIS].springMaxPosition = encoder.axis[X_AXIS].maxValue / 2;
-  effects[Y_AXIS].springMaxPosition = encoder.axis[Y_AXIS].maxValue / 2;
-
-  effects[X_AXIS].frictionPositionChange = encoder.axis[X_AXIS].positionChange; //lastX - posX;
-  effects[Y_AXIS].frictionPositionChange = encoder.axis[Y_AXIS].positionChange; //lastY - posY;
-
-  effects[X_AXIS].frictionMaxPositionChange = encoder.axis[X_AXIS].maxPositionChange;
-  effects[Y_AXIS].frictionMaxPositionChange = encoder.axis[Y_AXIS].maxPositionChange;
-
-  effects[X_AXIS].inertiaAcceleration = encoder.axis[X_AXIS].currentPosition;
-  effects[Y_AXIS].inertiaAcceleration = encoder.axis[Y_AXIS].currentPosition;
-
-  effects[X_AXIS].inertiaMaxAcceleration = encoder.axis[X_AXIS].maxAcceleration;
-  effects[Y_AXIS].inertiaMaxAcceleration = encoder.axis[Y_AXIS].maxAcceleration;
-
-  effects[X_AXIS].damperVelocity = encoder.axis[X_AXIS].currentVelocity;
-  effects[Y_AXIS].damperVelocity = encoder.axis[Y_AXIS].currentVelocity;
-
-  effects[X_AXIS].damperMaxVelocity = encoder.axis[X_AXIS].maxVelocity;
-  effects[Y_AXIS].damperMaxVelocity = encoder.axis[Y_AXIS].maxVelocity;
-
-  setEffectParams (effects);
+	setEffectParams (effects);
 
 }
 
@@ -336,6 +325,34 @@ void AutoCalibration(uint8_t idx)
       encoder.axis[idx].maxValue = encoder.axis[idx].currentPosition;
     }
 
+}
+
+
+
+float AutoCenter_spring(uint8_t ax)
+{
+	float scale = 0.4f;
+	float negativeSaturation = -32767;
+	float positiveSaturation = 32767;
+	float negativeCoefficient = 32767;
+	float positiveCoefficient= 32767;
+	float metric = effects[ax].springPosition * 1.00 / effects[ax].springMaxPosition;
+	float cpOffset = 0;
+	int32_t deadBand = config.SysConfig.AC_MotorSettings[ax].Dead_Zone;
+	float tempforce = 0;
+	if(metric < cpOffset)
+	{
+		tempforce = (metric - (cpOffset - deadBand)/effects[ax].springMaxPosition) * negativeCoefficient * scale;
+		tempforce = (tempforce < -negativeSaturation ? -negativeSaturation : tempforce);
+	}
+	else if (metric > cpOffset)
+	    {
+		tempforce = (metric - (cpOffset + deadBand)/effects[ax].springMaxPosition) * positiveCoefficient * scale;
+		tempforce = (tempforce > positiveSaturation ? positiveSaturation : tempforce);
+	    }
+	tempforce = -tempforce * gain[ax].springGain/255;
+
+	return tempforce;
 }
 
 void findCenter_Manual(int axis_num)
@@ -598,21 +615,20 @@ void Correct_Joystick_Positions(int axis_num, int32_t targetPosition)
 void CalculateMaxSpeedAndMaxAcceleration()
 {
 
-  for (int i = 0; i < 2; i++)
+  for (int ax = 0; ax < 2; ax++)
     {
-      if (encoder.axis[i].maxVelocity < abs(encoder.axis[i].currentVelocity))
-	{
-	  encoder.axis[i].maxVelocity = abs(encoder.axis[i].currentVelocity);
-	}
-      if(encoder.axis[i].maxAcceleration
-	  < abs(encoder.axis[i].currentAcceleration))
-	{
-	  encoder.axis[i].maxAcceleration = abs(encoder.axis[i].currentAcceleration);
-	}
-      if(encoder.axis[i].maxPositionChange < abs(encoder.axis[i].positionChange))
-	{
-	  encoder.axis[i].maxPositionChange = abs(encoder.axis[i].positionChange);
-	}
+		  if (abs(encoder.axis[ax].maxVelocity) < abs(encoder.axis[ax].currentVelocity))
+		{
+		  encoder.axis[ax].maxVelocity = abs(encoder.axis[ax].currentVelocity);
+		}
+		  if(abs(encoder.axis[ax].maxAcceleration) < abs(encoder.axis[ax].currentAcceleration))
+		{
+		  encoder.axis[ax].maxAcceleration = abs(encoder.axis[ax].currentAcceleration);
+		}
+		  if(abs(encoder.axis[ax].maxPositionChange) < abs(encoder.axis[ax].positionChange))
+		{
+		  encoder.axis[ax].maxPositionChange = abs(encoder.axis[ax].positionChange);
+		}
     }
 }
 

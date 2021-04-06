@@ -117,7 +117,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     		force = SawtoothUpForceCalculator (effect) * _gains.sawtoothupGain* angle_ratio;
       break;
     case USB_EFFECT_SPRING: //8
-			force = ConditionForceCalculator (effect, NormalizeRange (_effect_params.springPosition, _effect_params.springMaxPosition),condition) * _gains.springGain;
+			force = ConditionForceCalculator (effect, NormalizeRange (_effect_params.springPosition, _effect_params.springMaxPosition), 0.7f,condition) * _gains.springGain;
 
 			if (useForceDirectionForConditionEffect)
 				{
@@ -125,7 +125,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_DAMPER: //9
-			force = ConditionForceCalculator ( effect, NormalizeRange (_effect_params.damperVelocity, _effect_params.damperMaxVelocity), condition) * _gains.damperGain;
+			force = ConditionForceCalculator ( effect, NormalizeRange (_effect_params.damperVelocity, _effect_params.damperMaxVelocity), 1.0f, condition) * _gains.damperGain;
 
 			if (useForceDirectionForConditionEffect)
 				{
@@ -138,12 +138,12 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 		  	if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
 			{
 		  			force = ConditionForceCalculator (effect,abs( NormalizeRange (_effect_params.inertiaAcceleration,
-												  _effect_params.inertiaMaxAcceleration)),condition) * _gains.inertiaGain;
+												  _effect_params.inertiaMaxAcceleration)), 1.0f,condition) * _gains.inertiaGain;
 			}
 			  else if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange > 0)
 			{
 					  force = -1 * ConditionForceCalculator ( effect, abs ( NormalizeRange (_effect_params.inertiaAcceleration,
-												  _effect_params.inertiaMaxAcceleration)),condition) * _gains.inertiaGain;
+												  _effect_params.inertiaMaxAcceleration)), 1.0f,condition) * _gains.inertiaGain;
 			}
 
 			if (useForceDirectionForConditionEffect)
@@ -155,7 +155,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     			//effect.conditions[axis].negativeSaturation = FRICTION_SATURATION;
     			//effect.conditions[axis].positiveSaturation = FRICTION_SATURATION;
     		force = ConditionForceCalculator(effect, NormalizeRange(_effect_params.frictionPositionChange,
-    										_effect_params.frictionMaxPositionChange), condition) * _gains.frictionGain;
+    										_effect_params.frictionMaxPositionChange), 1.0f, condition) * _gains.frictionGain;
 
 			if (useForceDirectionForConditionEffect)
 			{
@@ -329,7 +329,7 @@ int32_t SawtoothUpForceCalculator (volatile TEffectState &effect)
   return ApplyEnvelope (effect, tempforce);
 }
 
-int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, uint8_t axis)
+int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, float scale, uint8_t axis)
 {
   float deadBand;
   float cpOffset;
@@ -349,7 +349,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, u
 
   if (metric < (cpOffset - deadBand))
     {
-      tempForce = (metric - (float) 1.00 * (cpOffset - deadBand) / 10000) * negativeCoefficient;
+      tempForce = (metric - scale * (cpOffset - deadBand) / m_effect_params[axis].springMaxPosition) * negativeCoefficient;
       //tempForce = (metric - (float) 0.70 * (cpOffset - deadBand) / 10000) * negativeCoefficient;
 
       tempForce = (tempForce < -negativeSaturation ? -negativeSaturation : tempForce);
@@ -357,7 +357,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, u
     }
   else if (metric > (cpOffset + deadBand))
     {
-      tempForce = (metric - (float) 1.00 * (cpOffset + deadBand) / 10000) * positiveCoefficient;
+      tempForce = (metric - scale * (cpOffset + deadBand) / m_effect_params[axis].springMaxPosition) * positiveCoefficient;
       //tempForce = (metric - (float) 0.70 * (cpOffset + deadBand) / 10000) * positiveCoefficient;
       tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
     }

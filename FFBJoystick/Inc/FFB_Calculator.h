@@ -63,7 +63,7 @@ int32_t SinForceCalculator (volatile TEffectState &effect);
 int32_t TriangleForceCalculator (volatile TEffectState &effect);
 int32_t SawtoothDownForceCalculator (volatile TEffectState &effect);
 int32_t SawtoothUpForceCalculator (volatile TEffectState &effect);
-int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, uint8_t axis);
+int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, float scale, uint8_t axis);
 void forceCalculator (int32_t *forces);
 int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParams _effect_params, uint8_t axis);
 //force feedback Interfaces

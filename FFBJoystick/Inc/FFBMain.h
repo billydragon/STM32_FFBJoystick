@@ -111,5 +111,6 @@ typedef struct //PID state
   void findCenter_Auto();
   void Update_Joystick_Position();
   void Correct_Joystick_Positions(int axis_num, int32_t targetPosition);
+  float AutoCenter_spring(uint8_t ax);
 
 #endif /* INC_FFBMAIN_H_ */

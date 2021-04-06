@@ -74,7 +74,7 @@ extern "C"
   {
     uint8_t Motor_Inv_X;
     uint8_t Motor_Inv_Y;
-    uint8_t Swap_xy_forces;
+    uint8_t AutoCenter;
     uint8_t Auto_Calibration;
     uint8_t Axis_Inv_X;
     uint8_t Axis_Inv_Y;

@@ -178,7 +178,6 @@ void QEncoder::updatePosition (uint8_t idx)
   QEncoder::Check_Axis_XY_Invert_Change ();
   if (axis[idx].inverted == true)
     read_Position = ~read_Position;
-
   axis[idx].currentPosition = read_Position;
 
   axis[idx].positionChange = axis[idx].currentPosition - axis[idx].lastPosition;
@@ -187,11 +186,11 @@ void QEncoder::updatePosition (uint8_t idx)
   if (diffTime > 0)
     {
       axis[idx].currentVelocity = axis[idx].positionChange / diffTime;
-      axis[idx].currentAcceleration = (abs (axis[idx].currentVelocity)
-	  - abs (axis[idx].lastVelocity)) / diffTime;
+      axis[idx].currentAcceleration = (abs(axis[idx].currentVelocity) - abs (axis[idx].lastVelocity)) / diffTime;
       axis[idx].lastEncoderTime = currentEncoderTime;
       axis[idx].lastVelocity = axis[idx].currentVelocity;
     }
   axis[idx].lastPosition = axis[idx].currentPosition;
 }
+
 
