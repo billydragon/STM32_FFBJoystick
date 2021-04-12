@@ -117,20 +117,13 @@ IntToUnicode (uint32_t value, uint8_t *pbuf, uint8_t len);
  * @{
  */
 
-uint8_t*
-USBD_FS_DeviceDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
-uint8_t*
-USBD_FS_LangIDStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
-uint8_t*
-USBD_FS_ManufacturerStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
-uint8_t*
-USBD_FS_ProductStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
-uint8_t*
-USBD_FS_SerialStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
-uint8_t*
-USBD_FS_ConfigStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
-uint8_t*
-USBD_FS_InterfaceStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t* USBD_FS_DeviceDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t* USBD_FS_LangIDStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t* USBD_FS_ManufacturerStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t* USBD_FS_ProductStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t* USBD_FS_SerialStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t* USBD_FS_ConfigStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
+uint8_t* USBD_FS_InterfaceStrDescriptor (USBD_SpeedTypeDef speed, uint16_t *length);
 #if (USBD_LPM_ENABLED == 1)
 uint8_t * USBD_FS_USR_BOSDescriptor(USBD_SpeedTypeDef speed, uint16_t *length);
 #endif /* (USBD_LPM_ENABLED == 1) */

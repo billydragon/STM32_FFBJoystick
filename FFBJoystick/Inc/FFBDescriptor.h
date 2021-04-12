@@ -612,8 +612,7 @@ static const uint8_t pidReportDescriptor[]
       0xC0 // END COLLECTION ()
   };
 
-int pidReportDescriptorSize = sizeof(pidReportDescriptor)
-    / sizeof(pidReportDescriptor[0]);
+int pidReportDescriptorSize = sizeof(pidReportDescriptor) / sizeof(pidReportDescriptor[0]);
 
 #endif // !
 

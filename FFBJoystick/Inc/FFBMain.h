@@ -61,7 +61,7 @@ extern "C"
 #define NUM_OF_ANALOG_AXIS		2
 
 #define NUM_OF_LIMITSWITCH		4
-#define NUM_OF_BUTTONS			32
+#define NUM_OF_BUTTONS			10
 #define NUM_OF_HATSWITCH		0
 #define ENCODER_MAX			 	1000000 		//-32767
 #define ENCODER_MIN			  	-1000000		//32767
@@ -78,8 +78,11 @@ extern "C"
 
 #define REPORT_FORCES_DATA		0x01
 #define REPORT_JOYSTICK_DATA	0x02
-#define AXIS_BACKWARD_X   		300
-#define AXIS_BACKWARD_Y   		200
+#define AXIS_BACKWARD_X   		1000
+#define AXIS_BACKWARD_Y   		600
+
+#define MIN_DAC_OUT_VOLT		0
+#define MAX_DAC_OUT_VOLT		10000
 
 #define USBLOG_INTERVAL		10000
 

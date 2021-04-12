@@ -35,8 +35,8 @@ USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
 volatile bool RunFirstTime = true;
 
-#define GOBACK_KP		20
-#define GOBACK_KI		1
+#define GOBACK_KP		5
+#define GOBACK_KI		0
 #define GOBACK_KD		0
 #define GOBACK_SAMPLETIME	0.01
 
@@ -64,7 +64,7 @@ void Set_PID_Turnings()
   Kd[ax] = config.SysConfig.Pid[ax].Kd;
   myPID[ax].SetTunings(Kp[ax],Ki[ax],Kd[ax]);
   myPID[ax].SetSampleTime(config.SysConfig.Pid[ax].SampleTime);
-  temp_outputlimit = map(config.SysConfig.Pid[ax].MaxOutput, 0, 3000, 0, 32767);
+  temp_outputlimit = map(config.SysConfig.Pid[ax].MaxOutput, MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT, 0, 32767);
   myPID[ax].SetOutputLimits(-temp_outputlimit, temp_outputlimit);
   myPID[ax].SetMode(AUTOMATIC);
   myPID[ax].SetControllerDirection(DIRECT);
@@ -93,23 +93,37 @@ void init_Joystick ()
 
     }
 
-	Buttons[0].pinNumber = JBUTTON1_Pin;
-	Buttons[0].Port = JBUTTON1_GPIO_Port;
+	Buttons[0].pinNumber = JBUTTON0_Pin;
+	Buttons[0].Port = JBUTTON0_GPIO_Port;
 
-	Buttons[1].pinNumber = JBUTTON2_Pin;
-	Buttons[1].Port = JBUTTON2_GPIO_Port;
+	Buttons[1].pinNumber = JBUTTON1_Pin;
+	Buttons[1].Port = JBUTTON1_GPIO_Port;
 
-	Buttons[2].pinNumber = JBUTTON3_Pin;
-	Buttons[2].Port = JBUTTON3_GPIO_Port;
+	Buttons[2].pinNumber = JBUTTON2_Pin;
+	Buttons[2].Port = JBUTTON2_GPIO_Port;
 
-	Buttons[3].pinNumber = JBUTTON4_Pin;
-	Buttons[3].Port = JBUTTON4_GPIO_Port;
+	Buttons[3].pinNumber = JBUTTON3_Pin;
+	Buttons[3].Port = JBUTTON3_GPIO_Port;
 
-	Buttons[4].pinNumber = JBUTTON5_Pin;
-	Buttons[4].Port = JBUTTON5_GPIO_Port;
+	Buttons[4].pinNumber = JBUTTON4_Pin;
+	Buttons[4].Port = JBUTTON4_GPIO_Port;
 
-	Estop_Sw.pinNumber = E_STOP_SW_Pin;
-	Estop_Sw.Port = E_STOP_SW_GPIO_Port;
+	Buttons[5].pinNumber = JBUTTON5_Pin;
+	Buttons[5].Port = JBUTTON5_GPIO_Port;
+
+	Buttons[6].pinNumber = JBUTTON6_Pin;
+	Buttons[6].Port = JBUTTON6_GPIO_Port;
+
+	Buttons[7].pinNumber = JBUTTON7_Pin;
+	Buttons[7].Port = JBUTTON7_GPIO_Port;
+
+	Buttons[8].pinNumber = JBUTTON8_Pin;
+	Buttons[8].Port = JBUTTON8_GPIO_Port;
+
+	Buttons[9].pinNumber = JBUTTON9_Pin;
+	Buttons[9].Port = JBUTTON9_GPIO_Port;
+
+
 
   Limit_Switch[X_LIMIT_MAX].pinNumber = X_LIMIT_MAX_Pin;
   Limit_Switch[X_LIMIT_MAX].Port = X_LIMIT_MAX_GPIO_Port;
@@ -239,19 +253,20 @@ void start_joystick ()
 	SetEffects ();
 	Set_Gains ();
 	getForce (xy_forces);
-
-  if (config.SysConfig.AppConfig.AutoCenter == true)
+/*
+ if (config.SysConfig.AppConfig.AutoCenter == true)
     {
-	  if(xy_forces[X_AXIS] == 0)
-	 	  xy_forces[X_AXIS] = AutoCenter_spring(X_AXIS);
-	  if(xy_forces[Y_AXIS] == 0)
-	   	  xy_forces[Y_AXIS] = AutoCenter_spring(Y_AXIS);
+		 if(FFB_effect_activated == false)
+		 {
+			 xy_forces[X_AXIS] += (int32_t) AutoCenter_spring(X_AXIS);
+			 xy_forces[Y_AXIS] += (int32_t) AutoCenter_spring(Y_AXIS);
+
+		 }
     }
+*/
 
-
-  Motors.SetMotorOutput(xy_forces);
-
-  Send_Debug_Report();
+ Motors.SetMotorOutput(xy_forces);
+ Send_Debug_Report();
 
 }
 
@@ -294,6 +309,7 @@ void SetEffects ()
 		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].maxAcceleration;
 		 effects[ax].damperVelocity = encoder.axis[ax].currentVelocity;
 		 effects[ax].damperMaxVelocity = encoder.axis[ax].maxVelocity;
+
 	}
 
 	setEffectParams (effects);
@@ -335,17 +351,17 @@ float AutoCenter_spring(uint8_t ax)
 	float negativeSaturation = -32767;
 	float positiveSaturation = 32767;
 	float negativeCoefficient = 32767;
-	float positiveCoefficient= 32767;
+	float positiveCoefficient = 32767;
 	float metric = effects[ax].springPosition * 1.00 / effects[ax].springMaxPosition;
 	float cpOffset = 0;
 	int32_t deadBand = config.SysConfig.AC_MotorSettings[ax].Dead_Zone;
 	float tempforce = 0;
-	if(metric < cpOffset)
+	if(metric < (cpOffset - deadBand))
 	{
 		tempforce = (metric - (cpOffset - deadBand)/effects[ax].springMaxPosition) * negativeCoefficient * scale;
 		tempforce = (tempforce < -negativeSaturation ? -negativeSaturation : tempforce);
 	}
-	else if (metric > cpOffset)
+	else if (metric > (cpOffset + deadBand))
 	    {
 		tempforce = (metric - (cpOffset + deadBand)/effects[ax].springMaxPosition) * positiveCoefficient * scale;
 		tempforce = (tempforce > positiveSaturation ? positiveSaturation : tempforce);
@@ -375,7 +391,7 @@ void findCenter_Manual(int axis_num)
   Motors.MotorDriverOn(X_AXIS);
   Motors.MotorDriverOn(Y_AXIS);
 
-  while (Buttons[0].CurrentState == 0)
+  while (Buttons[9].CurrentState == 0)
   {
 	if(( HAL_GetTick() - LedBlinkTime) > 500)
 	{
@@ -453,7 +469,7 @@ void findCenter_Auto()
 	  do //X MAX
 	  {
 
-		xy_forces[X_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
+		xy_forces[X_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 	    encoder.updatePosition(X_AXIS);
 		AutoCalibration(X_AXIS);
@@ -465,7 +481,7 @@ void findCenter_Auto()
 	  Limit_Switch[X_LIMIT_MIN].CurrentState = 0;
 	  do //X MIN
 	 	  {
-	 		xy_forces[X_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
+	 		xy_forces[X_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 	 		Motors.SetMotorOutput(xy_forces);
 	 	    encoder.updatePosition(X_AXIS);
 	 		AutoCalibration(X_AXIS);
@@ -493,7 +509,7 @@ void findCenter_Auto()
 				Limit_Switch[Y_LIMIT_MAX].CurrentState = 0;
 				  do //Y MAX
 				  {
-					xy_forces[Y_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
+					xy_forces[Y_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT,MAX_DAC_OUT_VOLT,0,32767);
 					Motors.SetMotorOutput(xy_forces);
 					encoder.updatePosition(Y_AXIS);
 					AutoCalibration(Y_AXIS);
@@ -505,7 +521,7 @@ void findCenter_Auto()
 				  Limit_Switch[Y_LIMIT_MIN].CurrentState = 0;
 				  do //Y MIN
 					  {
-						xy_forces[Y_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, 0,3000,0,32767);
+						xy_forces[Y_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT,MAX_DAC_OUT_VOLT,0,32767);
 						Motors.SetMotorOutput(xy_forces);
 						encoder.updatePosition(Y_AXIS);
 						AutoCalibration(Y_AXIS);

@@ -36,47 +36,53 @@ void delay_us (uint16_t us)
 void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 {
 
-  /* Prevent unused argument(s) compilation warning */
-  if (GPIO_Pin == Buttons[0].pinNumber)
-    {
-      uint8_t bState = !HAL_GPIO_ReadPin (Buttons[0].Port, Buttons[0].pinNumber);
-      if (Buttons[0].CurrentState != bState)
-	{
-	  if ((HAL_GetTick () - Buttons[0].millis_time) > DEBOUNCE_TIME)
-	    {
-
-	      Buttons[0].CurrentState = bState;
-	      Buttons[0].millis_time = HAL_GetTick ();
-	    }
-	  else
-	    {
-	      Buttons[0].CurrentState = !HAL_GPIO_ReadPin (Buttons[0].Port, Buttons[0].pinNumber);
-	    }
-	}
-
-      EXTI->PR |= Buttons[0].pinNumber;
-
-    }
-
-  if (GPIO_Pin == Estop_Sw.pinNumber)
-      {
-        uint8_t bState = !HAL_GPIO_ReadPin(Estop_Sw.Port, Estop_Sw.pinNumber);
-        if (Estop_Sw.CurrentState != bState)
+	//JBUTTON0
+	if (GPIO_Pin == Buttons[0].pinNumber)
 		{
-        	Estop_Sw.CurrentState = bState;
-		}
-        if(Estop_Sw.CurrentState == 1)
-        {
-        	xy_forces[0] = 0;
-        	xy_forces[1] = 0;
-        	Motors.SetMotorOutput(xy_forces);
-        	Motors.MotorDriverOff(X_AXIS);
-        	Motors.MotorDriverOff(Y_AXIS);
-        	Error_Handler();
-        }
+		  uint8_t bState = HAL_GPIO_ReadPin (Buttons[0].Port, Buttons[0].pinNumber);
+		  if (Buttons[0].CurrentState != bState)
+		{
+		  if ((HAL_GetTick () - Buttons[0].millis_time) > DEBOUNCE_TIME)
+			{
 
-        EXTI->PR |= Estop_Sw.pinNumber;
-      }
+			  Buttons[0].CurrentState = bState;
+			  Buttons[0].millis_time = HAL_GetTick ();
+			}
+		  else
+			{
+			  Buttons[0].CurrentState = HAL_GPIO_ReadPin (Buttons[0].Port, Buttons[0].pinNumber);
+			}
+		}
+
+		  EXTI->PR |= Buttons[0].pinNumber;
+
+		}
+
+  //JBUTTON1 - JBUTTON9
+	for (int i = 1; i < NUM_OF_BUTTONS; i++)
+	{
+		if (GPIO_Pin == Buttons[i].pinNumber)
+		    {
+		      uint8_t bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
+		      if (Buttons[i].CurrentState != bState)
+			{
+			  if ((HAL_GetTick () - Buttons[i].millis_time) > DEBOUNCE_TIME)
+			    {
+
+			      Buttons[i].CurrentState = bState;
+			      Buttons[i].millis_time = HAL_GetTick ();
+			    }
+			  else
+			    {
+			      Buttons[i].CurrentState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
+			    }
+			}
+
+		      EXTI->PR |= Buttons[i].pinNumber;
+
+		    }
+
+	}
 
 
   if(RunFirstTime == true)
