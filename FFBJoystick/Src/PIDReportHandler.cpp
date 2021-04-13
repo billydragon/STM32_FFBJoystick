@@ -84,8 +84,7 @@ void PIDReportHandler::FreeAllEffects (void)
   pidBlockLoad.ramPoolAvailable = MEMORY_SIZE;
 }
 
-void PIDReportHandler::EffectOperation (
-    USB_FFBReport_EffectOperation_Output_Data_t *data)
+void PIDReportHandler::EffectOperation (USB_FFBReport_EffectOperation_Output_Data_t *data)
 {
   if (data->operation == 1)
     { // Start
@@ -96,15 +95,12 @@ void PIDReportHandler::EffectOperation (
       StartEffect (data->effectBlockIndex);
     }
   else if (data->operation == 2)
-    { // StartSolo
-
-      // Stop all first
+    {
       StopAllEffects ();
-      // Then start the given effect
       StartEffect (data->effectBlockIndex);
     }
   else if (data->operation == 3)
-    { // Stop
+    {
       StopEffect (data->effectBlockIndex);
     }
   else
@@ -206,8 +202,7 @@ void PIDReportHandler::SetEffect (USB_FFBReport_SetEffect_Output_Data_t *data)
 
 }
 
-void PIDReportHandler::SetEnvelope (USB_FFBReport_SetEnvelope_Output_Data_t *data,
-			       volatile TEffectState *effect)
+void PIDReportHandler::SetEnvelope (USB_FFBReport_SetEnvelope_Output_Data_t *data, volatile TEffectState *effect)
 {
   effect->attackLevel = data->attackLevel;
   effect->fadeLevel = data->fadeLevel;
@@ -216,8 +211,7 @@ void PIDReportHandler::SetEnvelope (USB_FFBReport_SetEnvelope_Output_Data_t *dat
   effect->useEnvelope = true;
 }
 
-void PIDReportHandler::SetCondition (USB_FFBReport_SetCondition_Output_Data_t *data,
-				volatile TEffectState *effect)
+void PIDReportHandler::SetCondition (USB_FFBReport_SetCondition_Output_Data_t *data, volatile TEffectState *effect)
 {
   uint8_t axis = data->parameterBlockOffset;
   effect->conditions[axis].cpOffset = data->cpOffset;
@@ -226,11 +220,11 @@ void PIDReportHandler::SetCondition (USB_FFBReport_SetCondition_Output_Data_t *d
   effect->conditions[axis].positiveSaturation = data->positiveSaturation;
   effect->conditions[axis].negativeSaturation = data->negativeSaturation;
   effect->conditions[axis].deadBand = data->deadBand;
+  effect->axesIdx = (axis + 1 > effect->axesIdx) ? (axis + 1) : (effect->axesIdx);
   effect->conditionBlocksCount++;
 }
 
-void PIDReportHandler::SetPeriodic (USB_FFBReport_SetPeriodic_Output_Data_t *data,
-			       volatile TEffectState *effect)
+void PIDReportHandler::SetPeriodic (USB_FFBReport_SetPeriodic_Output_Data_t *data, volatile TEffectState *effect)
 {
   effect->magnitude = data->magnitude;
   effect->offset = data->offset;
@@ -238,9 +232,7 @@ void PIDReportHandler::SetPeriodic (USB_FFBReport_SetPeriodic_Output_Data_t *dat
   effect->period = data->period;
 }
 
-void PIDReportHandler::SetConstantForce (
-    USB_FFBReport_SetConstantForce_Output_Data_t *data,
-    volatile TEffectState *effect)
+void PIDReportHandler::SetConstantForce (USB_FFBReport_SetConstantForce_Output_Data_t *data,volatile TEffectState *effect)
 {
   //  ReportPrint(*effect);
   effect->magnitude = data->magnitude;
@@ -266,8 +258,7 @@ void PIDReportHandler::CreateNewEffect (USB_FFBReport_CreateNewEffect_Feature_Da
     {
       pidBlockLoad.loadStatus = 1;    // 1=Success,2=Full,3=Error
 
-      volatile TEffectState *effect =
-	  &g_EffectStates[pidBlockLoad.effectBlockIndex];
+      volatile TEffectState *effect = &g_EffectStates[pidBlockLoad.effectBlockIndex];
 
       memset ((void*) effect, 0, sizeof(TEffectState));
       effect->state = MEFFECTSTATE_ALLOCATED;

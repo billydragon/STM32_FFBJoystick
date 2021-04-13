@@ -353,11 +353,13 @@ typedef struct
   uint8_t effectType; //
   int16_t offset;
   uint8_t gain;
-  int16_t attackLevel, fadeLevel;
+  int16_t attackLevel;
+  int16_t fadeLevel;
   int16_t magnitude;
   uint8_t enableAxis; // bits: 0=X, 1=Y, 2=DirectionEnable
   uint8_t directionX; // angle (0=0 .. 255=360deg)
   uint8_t directionY; // angle (0=0 .. 255=360deg)
+  uint8_t axesIdx;
   uint8_t conditionBlocksCount;
   TEffectCondition conditions[FFB_AXIS_COUNT];
 
