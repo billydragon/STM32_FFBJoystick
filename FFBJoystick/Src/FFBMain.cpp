@@ -253,6 +253,7 @@ void start_joystick ()
 	SetEffects ();
 	Set_Gains ();
 	getForce (xy_forces);
+	CalculateMaxSpeedAndMaxAcceleration ();
 /*
  if (config.SysConfig.AppConfig.AutoCenter == true)
     {
@@ -297,7 +298,7 @@ void Send_Debug_Report()
 
 void SetEffects ()
 {
-	CalculateMaxSpeedAndMaxAcceleration ();
+
 
 	for (int ax = 0; ax <2; ax++)
 	{
