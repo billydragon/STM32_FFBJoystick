@@ -24,6 +24,9 @@ extern "C"
    PB7     ------> TIM4_CH2
    */
 #define ENCODER_Y		TIM4
+#ifdef __cplusplus
+}
+#endif
 
   class QEncoder
   {
@@ -44,13 +47,13 @@ extern "C"
     void overflowCallback_Y ();
     void timerElapsed (TIM_HandleTypeDef *htim);
     void updatePosition (uint8_t axis);
-    void Update_Metric_Version_A(uint8_t idx);
-    void Update_Metric_Version_B(uint8_t idx);
+    void Update_Metric_V2(uint8_t idx);
+    void Update_Metric();
+    int32_t NORMALIZE_RANGE (int32_t x, int32_t maxValue);
   private:
     void Check_Axis_XY_Invert_Change ();
 
+
   };
-#ifdef __cplusplus
-}
-#endif
+
 #endif /* SRC_QENCODER_H_ */

@@ -6,8 +6,9 @@
  */
 #include "FFBMain.h"
 #include "Joystick.h"
-#include "FFB_Calculator.h"
-#include "PIDReportHandler.h"
+//#include "FFB_Calculator.h"
+//#include "PIDReportHandler.h"
+#include "ffb.h"
 #include "usbd_joystick_hid_if.h"
 #include "QEncoder.h"
 #include "FFBConfig.h"
@@ -16,21 +17,20 @@
 #include "types.h"
 
 
-
 Gains gain[2] __attribute__((section("ccmram")));
-EffectParams effects[2]  __attribute__((section("ccmram")));
+//EffectParams effects[2]  __attribute__((section("ccmram")));
 int32_t xy_forces[2]  __attribute__((section("ccmram"))) = { 0 };
-TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS]  __attribute__((section("ccmram")));
+
 FFBConfig config  __attribute__((section("ccmram")));
 QEncoder encoder  __attribute__((section("ccmram")));
 MotorDriver Motors  __attribute__((section("ccmram")));
 
+TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS]  __attribute__((section("ccmram")));
 TDF_BUTTON Buttons[NUM_OF_BUTTONS];
 TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
-
 TDF_BUTTON Estop_Sw;
-
 uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
+
 USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
 volatile bool RunFirstTime = true;
@@ -250,10 +250,13 @@ void start_joystick ()
 	}
 
 	Update_Joystick_Position();
-	SetEffects ();
+	//SetEffects ();
 	Set_Gains ();
-	getForce (xy_forces);
-	CalculateMaxSpeedAndMaxAcceleration ();
+	//getForce (xy_forces);
+
+	FfbGetFeedbackValue(xy_forces);
+
+	//CalculateMaxSpeedAndMaxAcceleration ();
 /*
  if (config.SysConfig.AppConfig.AutoCenter == true)
     {
@@ -296,6 +299,7 @@ void Send_Debug_Report()
 
 }
 
+/*
 void SetEffects ()
 {
 
@@ -316,13 +320,14 @@ void SetEffects ()
 	setEffectParams (effects);
 
 }
+*/
 
 void Set_Gains ()
 {
 
-  memcpy (gain, config.SysConfig.Gain, sizeof(gain));
+  memcpy(gain, config.SysConfig.Gain, sizeof(gain));
 
-  setGains (gain);
+  setGains(gain);
 }
 
 void Set_RunFirstTime_state(bool state)
@@ -344,33 +349,6 @@ void AutoCalibration(uint8_t idx)
 
 }
 
-
-
-float AutoCenter_spring(uint8_t ax)
-{
-	float scale = 0.4f;
-	float negativeSaturation = -32767;
-	float positiveSaturation = 32767;
-	float negativeCoefficient = 32767;
-	float positiveCoefficient = 32767;
-	float metric = effects[ax].springPosition * 1.00 / effects[ax].springMaxPosition;
-	float cpOffset = 0;
-	int32_t deadBand = config.SysConfig.AC_MotorSettings[ax].Dead_Zone;
-	float tempforce = 0;
-	if(metric < (cpOffset - deadBand))
-	{
-		tempforce = (metric - (cpOffset - deadBand)/effects[ax].springMaxPosition) * negativeCoefficient * scale;
-		tempforce = (tempforce < -negativeSaturation ? -negativeSaturation : tempforce);
-	}
-	else if (metric > (cpOffset + deadBand))
-	    {
-		tempforce = (metric - (cpOffset + deadBand)/effects[ax].springMaxPosition) * positiveCoefficient * scale;
-		tempforce = (tempforce > positiveSaturation ? positiveSaturation : tempforce);
-	    }
-	tempforce = -tempforce * gain[ax].springGain/255;
-
-	return tempforce;
-}
 
 void findCenter_Manual(int axis_num)
 {

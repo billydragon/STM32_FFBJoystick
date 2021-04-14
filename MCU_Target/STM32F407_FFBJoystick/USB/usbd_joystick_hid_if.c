@@ -340,14 +340,14 @@ static int8_t USB_HID_GetFeature (uint16_t event_idx, uint16_t wIndex, uint8_t *
 	  if ((report_id == 7) || (report_id == 0x13))
 	    {
 
-	      USB_FFBReport_PIDPool_Feature_Data_t ans;
-	      ans.reportId = report_id;
-	      ans.ramPoolSize = 0xffff;
-	      ans.maxSimultaneousEffects = MAX_EFFECTS;
-	      ans.memoryManagement = 3;
+	      uint8_t *ans = GetPIDPool();
+	      //ans.reportId = report_id;
+	      //ans.ramPoolSize = 0xffff;
+	      //ans.maxSimultaneousEffects = MAX_EFFECTS;
+	      //ans.memoryManagement = 3;
 	      uint16_t GetFeatureDataSize = sizeof(USB_FFBReport_PIDBlockLoad_Feature_Data_t);
 	      *length = GetFeatureDataSize;
-	      memcpy (buffer, &ans, GetFeatureDataSize);
+	      memcpy (buffer, ans, GetFeatureDataSize);
 
 	      return (USBD_OK);
 	    }

@@ -15,9 +15,16 @@ uint8_t * JoystickHIDReportDescr;
 uint16_t  JoystickHIDReportDescr_Size;
 
 extern QEncoder encoder;
+
 extern MotorDriver Motors;
 extern int32_t xy_forces[2];
 extern volatile bool RunFirstTime;
+
+extern TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS];
+extern TDF_BUTTON Buttons[NUM_OF_BUTTONS];
+extern uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
+extern TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
+extern TDF_BUTTON Estop_Sw;
 
 void LimitSwitch_trig(uint16_t GPIO_Pin);
 

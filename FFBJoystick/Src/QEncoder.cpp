@@ -179,14 +179,12 @@ void QEncoder::updatePosition (uint8_t idx)
   if (axis[idx].inverted == true)
     read_Position = ~read_Position;
   axis[idx].currentPosition = read_Position;
-
   //Update_Metric_Version_A(idx);
-  Update_Metric_Version_B(idx);
-
+  //Update_Metric_Version_B(idx);
 
 }
 
-void QEncoder::Update_Metric_Version_A(uint8_t idx)
+void QEncoder::Update_Metric_V2(uint8_t idx)
 {
 	axis[idx].positionChange = axis[idx].currentPosition - axis[idx].lastPosition;
 	  uint32_t currentEncoderTime = HAL_GetTick ();
@@ -202,13 +200,23 @@ void QEncoder::Update_Metric_Version_A(uint8_t idx)
 
 }
 
-void QEncoder::Update_Metric_Version_B(uint8_t idx)
+void QEncoder::Update_Metric()
 {
-	axis[idx].positionChange = axis[idx].currentPosition - axis[idx].lastPosition;
-	axis[idx].currentVelocity = axis[idx].currentPosition - axis[idx].lastPosition;
-	axis[idx].currentAcceleration = axis[idx].currentVelocity - axis[idx].lastVelocity;
-	axis[idx].lastVelocity = axis[idx].currentVelocity;
-	axis[idx].lastPosition = axis[idx].currentPosition;
+	    axis[X_AXIS].positionChange = NORMALIZE_RANGE(axis[X_AXIS].currentPosition, axis[X_AXIS].maxValue);
+		axis[Y_AXIS].positionChange = NORMALIZE_RANGE(axis[X_AXIS].currentPosition, axis[X_AXIS].maxValue);
+		axis[X_AXIS].currentVelocity = axis[X_AXIS].positionChange - NORMALIZE_RANGE(axis[X_AXIS].lastPosition, axis[X_AXIS].maxValue);
+		axis[Y_AXIS].currentVelocity = axis[Y_AXIS].positionChange - NORMALIZE_RANGE(axis[Y_AXIS].lastPosition, axis[Y_AXIS].maxValue);
+		axis[X_AXIS].currentAcceleration = axis[X_AXIS].currentVelocity - axis[X_AXIS].lastVelocity;
+		axis[Y_AXIS].currentAcceleration = axis[Y_AXIS].currentVelocity - axis[Y_AXIS].lastVelocity;
+
+		axis[X_AXIS].lastPosition = axis[X_AXIS].currentPosition;
+		axis[Y_AXIS].lastPosition = axis[Y_AXIS].currentPosition;
+		axis[X_AXIS].lastVelocity = axis[X_AXIS].currentVelocity;
+		axis[Y_AXIS].lastVelocity = axis[Y_AXIS].currentVelocity;
 }
 
+int32_t QEncoder::NORMALIZE_RANGE(int32_t x, int32_t maxValue)
+{
 
+  return ((int32_t)((x*255)/maxValue));
+}

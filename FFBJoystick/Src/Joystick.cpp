@@ -8,7 +8,8 @@
 #include "usbd_joystick_hid_if.h"
 #include "Joystick.h"
 #include "FFBMain.h"
-#include "FFBDescriptor.h"
+//#include "FFBDescriptor.h"
+#include "FFB_HID_Descriptor.h"
 
 #define JOYSTICK_REPORT_ID_INDEX 7
 #define JOYSTICK_AXIS_MINIMUM -32767

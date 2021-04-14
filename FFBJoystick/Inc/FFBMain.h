@@ -13,10 +13,8 @@ extern "C"
 {
 #endif
 #include "cppmain.h"
+#include "stdbool.h"
 
-#ifdef __cplusplus
-}
-#endif
   struct __attribute__((packed)) TDF_AXIS
   {
     volatile uint32_t cPR;
@@ -86,6 +84,8 @@ extern "C"
 
 #define USBLOG_INTERVAL		10000
 
+//#define nullptr ((void*)0)
+
 typedef struct //PID state
 {
 	int32_t xy_forces[2];
@@ -94,11 +94,11 @@ typedef struct //PID state
 	int32_t axis_max[2];
 } USB_LoggerReport_t;
 
-  extern TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS];
-  extern TDF_BUTTON Buttons[NUM_OF_BUTTONS];
-  extern uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
-  extern TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
-  extern TDF_BUTTON Estop_Sw;
+  //extern TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS];
+  //extern TDF_BUTTON Buttons[NUM_OF_BUTTONS];
+  //extern uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
+  //extern TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
+  //extern TDF_BUTTON Estop_Sw;
 
   void init_Joystick();
   void start_joystick(void);
@@ -114,6 +114,8 @@ typedef struct //PID state
   void findCenter_Auto();
   void Update_Joystick_Position();
   void Correct_Joystick_Positions(int axis_num, int32_t targetPosition);
-  float AutoCenter_spring(uint8_t ax);
 
+#ifdef __cplusplus
+}
+#endif
 #endif /* INC_FFBMAIN_H_ */

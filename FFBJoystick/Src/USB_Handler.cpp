@@ -6,12 +6,13 @@
  */
 #include <usbd_joystick_hid_if.h>
 #include "USB_Handler.h"
-#include "PIDReportHandler.h"
-#include "PIDReportType.h"
+//#include "PIDReportHandler.h"
+//#include "PIDReportType.h"
+#include "ffb.h"
 #include "FFBConfig.h"
 
 extern USBD_COMPOSITE_HID_ItfTypeDef USBD_JoystickHID_fops_FS;
-extern PIDReportHandler pidReportHandler;
+//extern PIDReportHandler pidReportHandler;
 extern FFBConfig config;
 
 uint8_t USB_Recv_Buff[64];
@@ -19,26 +20,31 @@ uint8_t USB_Recv_Buff[64];
 void RecvfromUsb (uint8_t *buff)
 {
 
-  pidReportHandler.UppackUsbData (buff, 64);
+  //pidReportHandler.UppackUsbData (buff, 64);
+	FfbOnUsbData(buff, 64);
 
 }
 
 void CreatNewEffect (USB_FFBReport_CreateNewEffect_Feature_Data_t *buffer)
 {
 
-  pidReportHandler.CreateNewEffect (buffer);
+  //pidReportHandler.CreateNewEffect (buffer);
+	FfbOnCreateNewEffect(buffer);
 
 }
 
 uint8_t* GetPIDBlockLoad ()
 {
-  return pidReportHandler.getPIDBlockLoad ();
+  //return pidReportHandler.getPIDBlockLoad ();
+	return FfbOnPIDBlockLoad();
 
 }
 
 uint8_t* GetPIDStatus ()
 {
-  return pidReportHandler.getPIDStatus ();
+  //return pidReportHandler.getPIDStatus ();
+	return FfbOnPIDStatus();
+
 }
 
 uint8_t* Get_SysConfig ()
@@ -47,6 +53,14 @@ uint8_t* Get_SysConfig ()
   return config.GetSysConfig();
 
 }
+
+uint8_t * GetPIDPool()
+{
+
+	return FfbOnPIDPool();
+
+}
+
 
 void HostToDevSetFeature (uint8_t *buff, uint16_t len)
 {
@@ -57,6 +71,6 @@ void HostToDevSetFeature (uint8_t *buff, uint16_t len)
 
 void SetPIDBlockLoadReportID ()
 {
-  pidReportHandler.pidBlockLoad.reportId = 0;
+  //pidReportHandler.pidBlockLoad.reportId = 0;
 }
 

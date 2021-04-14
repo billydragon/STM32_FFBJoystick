@@ -8,7 +8,8 @@
 #ifndef INC_USB_HANDLER_H_
 #define INC_USB_HANDLER_H_
 #include "main.h"
-#include "PIDReportType.h"
+//#include "PIDReportType.h"
+#include "ffb.h"
 #include "FFBConfig_DataType.h"
 
 // HID Request Type HID1.11 Page 51 7.2.1 Get_Report Request
@@ -26,10 +27,11 @@ extern "C"
   void RecvfromUsb (uint8_t *buff);
 
   void CreatNewEffect (USB_FFBReport_CreateNewEffect_Feature_Data_t *buffer);
-  uint8_t* GetPIDBlockLoad ();
-  void SetPIDBlockLoadReportID ();
-  uint8_t* GetPIDStatus ();
-  uint8_t* Get_SysConfig ();
+  uint8_t* GetPIDBlockLoad (void);
+  void SetPIDBlockLoadReportID (void);
+  uint8_t* GetPIDStatus (void);
+  uint8_t* Get_SysConfig (void);
+  uint8_t * GetPIDPool(void);
 
   void HostToDevSetFeature (uint8_t *buff, uint16_t len);
 
