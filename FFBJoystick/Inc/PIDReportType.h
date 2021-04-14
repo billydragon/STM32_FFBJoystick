@@ -107,11 +107,11 @@ typedef struct //FFB: Set Effect Output Report
   uint16_t duration; // 0..32767 ms
   uint16_t triggerRepeatInterval; // 0..32767 ms
   uint16_t samplePeriod;	// 0..32767 ms
-  uint8_t gain;	// 0..255	 (physical 0..10000)
+  uint16_t gain;	// 0..255	 (physical 0..10000)
   uint8_t triggerButton;	// button ID (0..8)
   uint8_t enableAxis; // bits: 0=X, 1=Y, 2=DirectionEnable
-  uint8_t directionX;	// angle (0=0 .. 255=360deg)
-  uint8_t directionY;	// angle (0=0 .. 255=360deg)
+  uint16_t directionX;	// angle (0=0 .. 35999=360deg)
+  uint16_t directionY;	// angle (0=0 .. 35999=360deg)
   //	uint16_t	startDelay;	// 0..32767 ms
 } __attribute__((packed)) USB_FFBReport_SetEffect_Output_Data_t;
 
@@ -130,12 +130,12 @@ typedef struct	// FFB: Set Condition Output Report
   uint8_t reportId;	// =3
   uint8_t effectBlockIndex;	// 1..40
   uint8_t parameterBlockOffset;	// bits: 0..3=parameterBlockOffset, 4..5=instance1, 6..7=instance2
-  int16_t cpOffset;	// 0..255
-  int16_t positiveCoefficient;	// -128..127
-  int16_t negativeCoefficient;	// -128..127
-  uint16_t positiveSaturation;	// -	128..127
-  uint16_t negativeSaturation;	// -128..127
-  uint16_t deadBand;	// 0..255
+  int16_t cpOffset;	// -10000..10000
+  int16_t positiveCoefficient;	// 0..10000
+  int16_t negativeCoefficient;	// 0..10000
+  uint16_t positiveSaturation;	// 0..10000
+  uint16_t negativeSaturation;	// 0..10000
+  uint16_t deadBand;	// 0..10000
 } __attribute__((packed)) USB_FFBReport_SetCondition_Output_Data_t;
 
 typedef struct	//FFB: Set Periodic Output Report
@@ -144,7 +144,7 @@ typedef struct	//FFB: Set Periodic Output Report
   uint8_t effectBlockIndex;	// 1..40
   uint16_t magnitude;
   int16_t offset;
-  uint16_t phase;	// 0..255 (=0..359, exp-2)
+  uint16_t phase;	// 0..35999 (=0..359, exp-2)
   uint16_t period;	// 0..32767 ms
 } __attribute__((packed)) USB_FFBReport_SetPeriodic_Output_Data_t;
 
@@ -152,7 +152,7 @@ typedef struct	//FFB: Set ConstantForce Output Report
 {
   uint8_t reportId;	// =5
   uint8_t effectBlockIndex;	// 1..40
-  int16_t magnitude;	// -255..255
+  int16_t magnitude;	// -10000..10000
 } __attribute__((packed)) USB_FFBReport_SetConstantForce_Output_Data_t;
 
 typedef struct	//FFB: Set RampForce Output Report
@@ -201,7 +201,7 @@ typedef struct	//FFB: Device Control Output Report
 typedef struct	//FFB: DeviceGain Output Report
 {
   uint8_t reportId;	// =13
-  uint8_t gain;
+  uint16_t gain;
 } __attribute__((packed)) USB_FFBReport_DeviceGain_Output_Data_t;
 
 typedef struct	// FFB: Set Custom Force Output Report
@@ -352,13 +352,13 @@ typedef struct
   volatile uint8_t state;  // see constants <MEffectState_*>
   uint8_t effectType; //
   int16_t offset;
-  uint8_t gain;
+  uint16_t gain;
   int16_t attackLevel;
   int16_t fadeLevel;
   int16_t magnitude;
   uint8_t enableAxis; // bits: 0=X, 1=Y, 2=DirectionEnable
-  uint8_t directionX; // angle (0=0 .. 255=360deg)
-  uint8_t directionY; // angle (0=0 .. 255=360deg)
+  uint16_t directionX; // angle (0=0 .. 35999=360deg)
+  uint16_t directionY; // angle (0=0 .. 35999=360deg)
   uint8_t axesIdx;
   uint8_t conditionBlocksCount;
   TEffectCondition conditions[FFB_AXIS_COUNT];

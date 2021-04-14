@@ -33,17 +33,17 @@ struct __attribute__((packed)) Gains
 
 struct __attribute__((packed)) EffectParams
 {
-  int32_t springMaxPosition = 0;
-  int32_t springPosition = 0;
+		float springMaxPosition = 0;
+		float springPosition = 0;
 
-  int32_t damperMaxVelocity = 0;
-  int32_t damperVelocity = 0;
+		float damperMaxVelocity = 0;
+		float damperVelocity = 0;
 
-  int32_t inertiaMaxAcceleration = 0;
-  int32_t inertiaAcceleration = 0;
+		float inertiaMaxAcceleration = 0;
+		float inertiaAcceleration = 0;
 
-  int32_t frictionMaxPositionChange = 0;
-  int32_t frictionPositionChange = 0;
+		float frictionMaxPositionChange = 0;
+		float frictionPositionChange = 0;
 };
 
 
@@ -56,7 +56,7 @@ extern Gains *m_gains;
 extern EffectParams *m_effect_params;
 
 ///force calculate funtion
-float NormalizeRange (int32_t x, int32_t maxValue);
+
 int32_t ApplyEnvelope (volatile TEffectState &effect, int32_t value);
 int32_t ApplyGain (uint8_t value, uint8_t gain);
 int32_t ConstantForceCalculator (volatile TEffectState &effect);

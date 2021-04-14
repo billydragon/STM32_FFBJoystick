@@ -28,13 +28,13 @@ extern "C"
     volatile int32_t currentPosition;
     volatile int32_t lastPosition;
     volatile int32_t correctPosition;
-    volatile int32_t currentVelocity;
-    volatile int32_t lastVelocity;
-    volatile int32_t maxVelocity;
-    volatile int32_t currentAcceleration;
-    volatile int32_t maxAcceleration;
-    volatile int32_t positionChange;
-    volatile int32_t maxPositionChange;
+    volatile float currentVelocity;
+    volatile float lastVelocity;
+    volatile float maxVelocity;
+    volatile float currentAcceleration;
+    volatile float maxAcceleration;
+    volatile float positionChange;
+    volatile float maxPositionChange;
   };
 
   struct __attribute__((packed)) TDF_BUTTON

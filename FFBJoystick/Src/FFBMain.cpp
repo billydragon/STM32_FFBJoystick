@@ -297,12 +297,13 @@ void Send_Debug_Report()
 
 void SetEffects ()
 {
+	encoder.Update_Metric_by_Encoder();
 	CalculateMaxSpeedAndMaxAcceleration ();
 
 	for (int ax = 0; ax <2; ax++)
 	{
-		 effects[ax].springPosition = encoder.axis[ax].currentPosition;
-		 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
+		 effects[ax].springPosition = encoder.axis[ax].positionChange;
+		 effects[ax].springMaxPosition = encoder.axis[ax].maxPositionChange;
 		 effects[ax].frictionPositionChange = encoder.axis[ax].positionChange; //lastX - posX;
 		 effects[ax].frictionMaxPositionChange = encoder.axis[ax].maxPositionChange;
 		 effects[ax].inertiaAcceleration = encoder.axis[ax].currentAcceleration;
@@ -313,7 +314,6 @@ void SetEffects ()
 	}
 
 	setEffectParams (effects);
-
 }
 
 void Set_Gains ()

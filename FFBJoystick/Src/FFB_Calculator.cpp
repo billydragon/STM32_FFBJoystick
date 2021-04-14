@@ -81,7 +81,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
       condition = axis;
     }
 
-  float angle = ((float)direction * 360.0 / 255.0) * DEG_TO_RAD;
+  float angle = ((float)direction * 360.0 / 35999.0) * DEG_TO_RAD;
   //float angle = ((float)direction * 360.0 / 65535.0) * DEG_TO_RAD;
   float angle_ratio = axis == 0 ? sin (angle) : -1 * cos (angle);
 
@@ -93,41 +93,41 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     		force = ConstantForceCalculator (effect);
     		if(effect.useEnvelope)
 			   {
-				force += ApplyEnvelope(effect, (int32_t)force * _gains.constantGain * angle_ratio);
+				force += ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.constantGain/255;
 			   }
     		else
     		{
-    			force += force * _gains.constantGain * angle_ratio;
+    			force += force * _gains.constantGain/255 * angle_ratio;
     		}
       break;
     case USB_EFFECT_RAMP: //2
     		force = RampForceCalculator (effect);
     		if(effect.useEnvelope)
     		{
-    			force -= ApplyEnvelope(effect, (int32_t)force * _gains.rampGain * angle_ratio) ;
+    			force -= ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.rampGain/255 ;
     		}
     		else
     		{
-    			force -= force *  _gains.rampGain * angle_ratio;
+    			force -= force *  _gains.rampGain/255 * angle_ratio;
     		}
       break;
     case USB_EFFECT_SQUARE: //3
-    		force = SquareForceCalculator (effect) * _gains.squareGain * angle_ratio;
+    		force = SquareForceCalculator (effect) * _gains.squareGain /255 * angle_ratio;
       break;
     case USB_EFFECT_SINE: //4
-    		force = SinForceCalculator (effect) * _gains.sineGain * angle_ratio;
+    		force = SinForceCalculator (effect) * _gains.sineGain/255 * angle_ratio;
       break;
     case USB_EFFECT_TRIANGLE: //5
-    		force = TriangleForceCalculator (effect) * _gains.triangleGain * angle_ratio;
+    		force = TriangleForceCalculator (effect) * _gains.triangleGain/255 * angle_ratio;
       break;
     case USB_EFFECT_SAWTOOTHDOWN: //6
     		force = SawtoothDownForceCalculator (effect) * _gains.sawtoothdownGain  * angle_ratio;
       break;
     case USB_EFFECT_SAWTOOTHUP: //7
-    		force = SawtoothUpForceCalculator (effect) * _gains.sawtoothupGain* angle_ratio;
+    		force = SawtoothUpForceCalculator (effect) * _gains.sawtoothupGain /255 * angle_ratio;
       break;
     case USB_EFFECT_SPRING: //8
-			force += ConditionForceCalculator (effect, NormalizeRange (_effect_params.springPosition, _effect_params.springMaxPosition), 0.40f,condition) * _gains.springGain;
+			force += ConditionForceCalculator (effect, _effect_params.springPosition, 1.0f, condition) * _gains.springGain/255;
 
 			if (useForceDirectionForConditionEffect)
 				{
@@ -136,7 +136,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
       break;
     case USB_EFFECT_DAMPER: //9
 
-			force += ConditionForceCalculator ( effect, NormalizeRange (_effect_params.damperVelocity, _effect_params.damperMaxVelocity), 0.4f, condition) * _gains.damperGain;
+			force += ConditionForceCalculator (effect, _effect_params.damperVelocity, 1.0f, condition) * _gains.damperGain/255;
 
 
 			if (useForceDirectionForConditionEffect)
@@ -146,12 +146,9 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
       break;
     case USB_EFFECT_INERTIA: //10
 
-    			effect.conditions[axis].negativeSaturation = -INERTIA_SATURATION;
-    			effect.conditions[axis].positiveSaturation = INERTIA_SATURATION;
 		  	//if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
 			//{
-		  			force = ConditionForceCalculator (effect, abs( NormalizeRange (_effect_params.inertiaAcceleration,
-												  _effect_params.inertiaMaxAcceleration)), 0.40f,condition) * _gains.inertiaGain;
+		  			force = ConditionForceCalculator (effect, abs(_effect_params.inertiaAcceleration), 1.0f,condition) * _gains.inertiaGain/255;
 			//}
 			  //else if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange > 0)
 			//{
@@ -167,10 +164,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
       break;
     case USB_EFFECT_FRICTION: //11
 
-    			//effect.conditions[axis].negativeSaturation = -FRICTION_SATURATION;
-    			//effect.conditions[axis].positiveSaturation = FRICTION_SATURATION;
-    		force += ConditionForceCalculator(effect, NormalizeRange(_effect_params.frictionPositionChange,
-    										_effect_params.frictionMaxPositionChange), 0.4f, condition) * _gains.frictionGain;
+    		force += ConditionForceCalculator(effect, _effect_params.frictionPositionChange, 1.0f, condition) * _gains.frictionGain /255;
 
 
 			if (useForceDirectionForConditionEffect)
@@ -213,9 +207,9 @@ void forceCalculator (int32_t *forces)
 
     }
   // each effect gain * total effect gain = 10000
-  forces[0] = (int32_t) ((float) 1.00 * forces[0] * m_gains[0].totalGain / 10000);
+  forces[0] = (int32_t) ((float) 1.00 * forces[0] * m_gains[0].totalGain / 255);
   // each effect gain * total effect gain = 10000
-  forces[1] = (int32_t) ((float) 1.00 * forces[1] * m_gains[1].totalGain / 10000);
+  forces[1] = (int32_t) ((float) 1.00 * forces[1] * m_gains[1].totalGain / 255);
   //forces[0] = constrain(forces[0], -255, 255);
   //forces[1] = constrain(forces[1], -255, 255);
   forces[0] = constrain(forces[0], -32767, 32767);		//16 bits
@@ -227,7 +221,7 @@ void forceCalculator (int32_t *forces)
 int32_t ConstantForceCalculator (volatile TEffectState &effect)
 {
 
-  float tempforce = ((float) effect.magnitude * (int32_t)(1 + effect.gain))/255;
+  float tempforce = ((float) effect.magnitude * (int32_t)(1 + effect.gain))/10000;
   //float tempforce = ((float) effect.magnitude * (int32_t)(1 + effect.gain))/0xFFFF;
   //tempforce = map(tempforce, -10000, 10000, -255, 255);			//DAC resulusion 16 bit - remove this
   tempforce = map(tempforce, -10000, 10000, -32767, 32767);
@@ -238,9 +232,9 @@ int32_t ConstantForceCalculator (volatile TEffectState &effect)
 int32_t RampForceCalculator (volatile TEffectState &effect)
 {
 	uint32_t duration = effect.duration;
-	duration = (duration == 0) ? 0x7FFF : duration; // prevent div zero
+	duration = (duration == 0) ? 32767 : duration; // prevent div zero
   int32_t rampForce = effect.startMagnitude + effect.elapsedTime * (effect.endMagnitude - effect.startMagnitude)/ duration;
-  rampForce *= (int32_t)(1 + effect.gain) >> 8;
+  rampForce *= (int32_t)(1 + effect.gain) /10000;
 
   return rampForce;
 }
@@ -255,8 +249,8 @@ int32_t SquareForceCalculator (volatile TEffectState &effect)
 
   int32_t maxMagnitude = offset + magnitude;
   int32_t minMagnitude = offset - magnitude;
-  uint32_t phasetime = (phase * period) / 255;
-  //uint32_t phasetime = (phase * period) / 35999;
+  //uint32_t phasetime = (phase * period) / 255;
+  uint32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   uint32_t reminder = timeTemp % period;
   int32_t tempforce;
@@ -274,7 +268,7 @@ int32_t SinForceCalculator (volatile TEffectState &effect)
   float phase = effect.phase;
   float timeTemp = effect.elapsedTime;
   float period = effect.period;
-  float angle = ((timeTemp / period) + (phase / 255) * period) * 2 * PI;
+  float angle = ((timeTemp / period) + (phase / 35999) * period) * 2 * PI;
   //float angle = ((timeTemp / period) * 2 * PI + (float) (phase / 36000));
   float sine = sin (angle);
   float tempforce = sine * magnitude;
@@ -293,8 +287,8 @@ int32_t TriangleForceCalculator (volatile TEffectState &effect)
 
   float maxMagnitude = offset + magnitude;
   float minMagnitude = offset - magnitude;
-  uint32_t phasetime = (phase * period) / 255;
-  //uint32_t phasetime = (phase * period) / 35999;
+  //uint32_t phasetime = (phase * period) / 255;
+  uint32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   float reminder = timeTemp % period;
   float slope = ((maxMagnitude - minMagnitude) * 2) / periodF;
@@ -318,8 +312,8 @@ int32_t SawtoothDownForceCalculator (volatile TEffectState &effect)
 
   float maxMagnitude = offset + magnitude;
   float minMagnitude = offset - magnitude;
-  int32_t phasetime = (phase * period) / 255;
-  //int32_t phasetime = (phase * period) / 35999;
+  //int32_t phasetime = (phase * period) / 255;
+  int32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   float reminder = timeTemp % period;
   float slope = (maxMagnitude - minMagnitude) / periodF;
@@ -340,8 +334,8 @@ int32_t SawtoothUpForceCalculator (volatile TEffectState &effect)
 
   float maxMagnitude = offset + magnitude;
   float minMagnitude = offset - magnitude;
-  int32_t phasetime = (phase * period) / 255;
-  //int32_t phasetime = (phase * period) / 35999;
+  //int32_t phasetime = (phase * period) / 255;
+  int32_t phasetime = (phase * period) / 35999;
   uint32_t timeTemp = elapsedTime + phasetime;
   float reminder = timeTemp % period;
   float slope = (maxMagnitude - minMagnitude) / periodF;
@@ -391,7 +385,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
     }
 	  else return 0;
 
-	  tempForce = -tempForce * effect.gain / 255;
+	  tempForce = -tempForce * effect.gain / 10000;
 	  //tempForce = -tempForce * effect.gain / 0x7FFF;
   switch (effect.effectType)
     {
@@ -415,15 +409,12 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   return (int32_t) tempForce;
 }
 
-float NormalizeRange (int32_t x, int32_t maxValue)
-{
-  return (float) x * 1.00 / maxValue;
-}
+
 
 int32_t ApplyGain (uint8_t value, uint8_t gain)
 {
   int32_t value_32 = (int16_t) value;
-  return ((value_32 * gain) / 255);
+  return ((value_32 * gain) / 10000);
   //return ((value_32 * gain) / 0xFFFF);
 }
 
@@ -452,14 +443,14 @@ int32_t ApplyEnvelope (volatile TEffectState &effect, int32_t value)
     }
 
   newValue *= value;
-  newValue /= 255;
+  newValue /= 32767;
   //newValue /= 0xFFFF; //16 bits
   return newValue;
 }
 
-void
-end ()
+void end ()
 {
+
 }
 //set gain functions
 int8_t setGains (Gains *_gains)
