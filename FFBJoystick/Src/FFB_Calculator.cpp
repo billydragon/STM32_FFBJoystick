@@ -12,8 +12,8 @@
 #include "FFBConfig.h"
 
 
-#define FRICTION_SATURATION 32767
-#define INERTIA_SATURATION 32767
+#define FRICTION_SATURATION 10000
+#define INERTIA_SATURATION 10000
 
 const float cutoff_freq_damper = 5.0;  //Cutoff frequency in Hz
 const float sampling_time_damper = 0.001; //Sampling time in seconds.
@@ -126,7 +126,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 				}
       break;
     case USB_EFFECT_DAMPER: //9
-			force = ConditionForceCalculator ( effect, NormalizeRange (_effect_params.damperVelocity, _effect_params.damperMaxVelocity), 0.7f, condition) * _gains.damperGain;
+			force = ConditionForceCalculator ( effect, NormalizeRange (_effect_params.damperVelocity, _effect_params.damperMaxVelocity), 1.0f, condition) * _gains.damperGain;
 
 			if (useForceDirectionForConditionEffect)
 				{
@@ -136,16 +136,16 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     case USB_EFFECT_INERTIA: //10
     			effect.conditions[axis].negativeSaturation = -INERTIA_SATURATION;
     			effect.conditions[axis].positiveSaturation = INERTIA_SATURATION;
-		  	if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
-			{
-		  			force = ConditionForceCalculator (effect,abs( NormalizeRange (_effect_params.inertiaAcceleration,
-												  _effect_params.inertiaMaxAcceleration)), 0.7f,condition) * _gains.inertiaGain;
-			}
-			  else if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange > 0)
-			{
-					  force = -1 * ConditionForceCalculator ( effect, abs ( NormalizeRange (_effect_params.inertiaAcceleration,
-												  _effect_params.inertiaMaxAcceleration)), 0.7f,condition) * _gains.inertiaGain;
-			}
+		  	//if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
+			//{
+		  			force = ConditionForceCalculator (effect, abs( NormalizeRange (_effect_params.inertiaAcceleration,
+												  _effect_params.inertiaMaxAcceleration)), 1.0f,condition) * _gains.inertiaGain;
+			//}
+			  //else if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange > 0)
+			//{
+					  //force = -1 * ConditionForceCalculator ( effect, abs ( NormalizeRange (_effect_params.inertiaAcceleration,
+					//							  _effect_params.inertiaMaxAcceleration)), 0.70f,condition) * _gains.inertiaGain;
+			//}
 
 			if (useForceDirectionForConditionEffect)
 				{
@@ -156,7 +156,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     			effect.conditions[axis].negativeSaturation = -FRICTION_SATURATION;
     			effect.conditions[axis].positiveSaturation = FRICTION_SATURATION;
     		force = ConditionForceCalculator(effect, NormalizeRange(_effect_params.frictionPositionChange,
-    										_effect_params.frictionMaxPositionChange), 0.7f, condition) * _gains.frictionGain;
+    										_effect_params.frictionMaxPositionChange), 1.0f, condition) * _gains.frictionGain;
 
 			if (useForceDirectionForConditionEffect)
 			{
@@ -355,7 +355,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   if (metric < (cpOffset - deadBand))
     {
       //tempForce = (metric - (cpOffset - deadBand) / m_effect_params[axis].springMaxPosition) * negativeCoefficient * scale;
-      tempForce = (metric -  scale * (cpOffset - deadBand) / 10000) * negativeCoefficient;
+      tempForce = (metric -   1.0f * (cpOffset - deadBand)/10000) * negativeCoefficient * scale;
 
       tempForce = (tempForce < -negativeSaturation ? -negativeSaturation : tempForce);
 
@@ -363,12 +363,14 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   else if (metric > (cpOffset + deadBand))
     {
       //tempForce = (metric -  (cpOffset + deadBand) / m_effect_params[axis].springMaxPosition) * positiveCoefficient * scale;
-      tempForce = (metric -  scale * (cpOffset + deadBand) / 10000) * positiveCoefficient;
+      tempForce = (metric -  1.0f * (cpOffset + deadBand)/10000) * positiveCoefficient * scale;
       tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
     }
-	  //else return 0;
+	  else return 0;
+
+
 	  tempForce = -tempForce * effect.gain / 255;
-	  //tempForce = -tempForce * effect.gain / 0xFFFF;
+	  //tempForce = -tempForce * effect.gain / 0x7FFF;
   switch (effect.effectType)
     {
     case USB_EFFECT_DAMPER:

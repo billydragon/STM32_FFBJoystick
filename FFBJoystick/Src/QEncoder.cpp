@@ -180,8 +180,8 @@ void QEncoder::updatePosition (uint8_t idx)
     read_Position = ~read_Position;
   axis[idx].currentPosition = read_Position;
 
-  Update_Metric_Version_A(idx);
-  //Update_Metric_Version_B(idx);
+  //Update_Metric_Version_A(idx);
+  Update_Metric_Version_B(idx);
 
 
 }
