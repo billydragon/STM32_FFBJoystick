@@ -158,9 +158,9 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 
 void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef *hadc)
 {
-  analog_axis[RX_AXIS].currentPosition = map(adc_buff[RX_AXIS], 0, 4095,
+  analog_axis[RX_AXIS].current_Position = map(adc_buff[RX_AXIS], 0, 4095,
 											  analog_axis[RX_AXIS].minValue, analog_axis[RX_AXIS].maxValue);
-  analog_axis[RY_AXIS].currentPosition = map(adc_buff[RY_AXIS], 0, 4095,
+  analog_axis[RY_AXIS].current_Position = map(adc_buff[RY_AXIS], 0, 4095,
 											  analog_axis[RY_AXIS].minValue, analog_axis[RY_AXIS].maxValue);
 }
 

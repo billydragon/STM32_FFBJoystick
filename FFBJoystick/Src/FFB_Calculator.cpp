@@ -10,7 +10,7 @@
 #include "PIDReportType.h"
 #include "filters.h"
 #include "FFBConfig.h"
-
+#include "QEncoder.h"
 
 #define FRICTION_SATURATION 10000
 #define INERTIA_SATURATION 10000
@@ -19,11 +19,12 @@ const float cutoff_freq_damper = 5.0;  //Cutoff frequency in Hz
 const float sampling_time_damper = 0.001; //Sampling time in seconds.
 IIR::ORDER order = IIR::ORDER::OD1; // Order (OD1 to OD4)
 Filter damperFilter (cutoff_freq_damper, sampling_time_damper, order);
-Filter interiaFilter (cutoff_freq_damper, sampling_time_damper, order);
+Filter inertiaFilter (cutoff_freq_damper, sampling_time_damper, order);
 Filter frictionFilter (cutoff_freq_damper, sampling_time_damper, order);
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 extern FFBConfig config;
+extern QEncoder encoder;
 PIDReportHandler pidReportHandler;
 
 Gains *m_gains;
@@ -40,8 +41,8 @@ void setFilterParameter()
 	damperFilter.setCutoffFreqHZ(hz_, true);
 	damperFilter.setSamplingTime(ts_, true);
 
-	interiaFilter.setCutoffFreqHZ(hz_, true);
-	interiaFilter.setSamplingTime(ts_, true);
+	inertiaFilter.setCutoffFreqHZ(hz_, true);
+	inertiaFilter.setSamplingTime(ts_, true);
 
 	frictionFilter.setCutoffFreqHZ(hz_, true);
 	frictionFilter.setSamplingTime(ts_, true);
@@ -86,6 +87,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
   float angle_ratio = axis == 0 ? sin (angle) : -1 * cos (angle);
 
   int32_t force = 0;
+  float metric =0;
   switch (effect.effectType)
     {
     case USB_EFFECT_CONSTANT: //1
@@ -93,85 +95,74 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     		force = ConstantForceCalculator (effect);
     		if(effect.useEnvelope)
 			   {
-				force += ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.constantGain/255;
+				force += ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.constantGain /255;
 			   }
     		else
     		{
-    			force += force * _gains.constantGain/255 * angle_ratio;
+    			force += force * angle_ratio * _gains.constantGain /255 ;
     		}
       break;
     case USB_EFFECT_RAMP: //2
     		force = RampForceCalculator (effect);
     		if(effect.useEnvelope)
     		{
-    			force -= ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.rampGain/255 ;
+    			force -= ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.rampGain /255 ;
     		}
     		else
     		{
-    			force -= force *  _gains.rampGain/255 * angle_ratio;
+    			force -= force * angle_ratio  *  _gains.rampGain /255 ;
     		}
       break;
     case USB_EFFECT_SQUARE: //3
-    		force = SquareForceCalculator (effect) * _gains.squareGain /255 * angle_ratio;
+    		force = SquareForceCalculator (effect)  * angle_ratio * _gains.squareGain /255 ;
       break;
     case USB_EFFECT_SINE: //4
-    		force = SinForceCalculator (effect) * _gains.sineGain/255 * angle_ratio;
+    		force = SinForceCalculator (effect)  * angle_ratio * _gains.sineGain /255;
       break;
     case USB_EFFECT_TRIANGLE: //5
-    		force = TriangleForceCalculator (effect) * _gains.triangleGain/255 * angle_ratio;
+    		force = TriangleForceCalculator (effect)  * angle_ratio * _gains.triangleGain /255 ;
       break;
     case USB_EFFECT_SAWTOOTHDOWN: //6
-    		force = SawtoothDownForceCalculator (effect) * _gains.sawtoothdownGain  * angle_ratio;
+    		force = SawtoothDownForceCalculator (effect) * angle_ratio * _gains.sawtoothdownGain /255 ;
       break;
     case USB_EFFECT_SAWTOOTHUP: //7
-    		force = SawtoothUpForceCalculator (effect) * _gains.sawtoothupGain /255 * angle_ratio;
+    		force = SawtoothUpForceCalculator (effect) * angle_ratio * _gains.sawtoothupGain /255 ;
       break;
-    case USB_EFFECT_SPRING: //8
-			force += ConditionForceCalculator (effect, _effect_params.springPosition, 1.0f, condition) * _gains.springGain/255;
+    case USB_EFFECT_SPRING://8
 
-			if (useForceDirectionForConditionEffect)
-				{
-					force *= angle_ratio;
-				}
-      break;
-    case USB_EFFECT_DAMPER: //9
-
-			force += ConditionForceCalculator (effect, _effect_params.damperVelocity, 1.0f, condition) * _gains.damperGain/255;
-
-
-			if (useForceDirectionForConditionEffect)
-				{
-					force *= angle_ratio;
-				}
-      break;
-    case USB_EFFECT_INERTIA: //10
-
-		  	//if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
-			//{
-		  			force = ConditionForceCalculator (effect, abs(_effect_params.inertiaAcceleration), 1.0f,condition) * _gains.inertiaGain/255;
-			//}
-			  //else if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange > 0)
-			//{
-					  //force = -1 * ConditionForceCalculator ( effect, abs ( NormalizeRange (_effect_params.inertiaAcceleration,
-					//							  _effect_params.inertiaMaxAcceleration)), 0.70f,condition) * _gains.inertiaGain;
-			//}
-
-
-			if (useForceDirectionForConditionEffect)
-				{
-					force *= angle_ratio;
-				}
-      break;
-    case USB_EFFECT_FRICTION: //11
-
-    		force += ConditionForceCalculator(effect, _effect_params.frictionPositionChange, 1.0f, condition) * _gains.frictionGain /255;
-
-
-			if (useForceDirectionForConditionEffect)
-			{
+    	metric = NormalizeRange(_effect_params.springPosition,_effect_params.springMaxPosition);
+		force = ConditionForceCalculator(effect, metric, 1.0f, condition) * _gains.springGain /255;
+		if (useForceDirectionForConditionEffect) {
 				force *= angle_ratio;
 			}
-      break;
+		break;
+	case USB_EFFECT_DAMPER://9
+			 setFilterParameter();
+		     metric = damperFilter.filterIn (NormalizeRange(_effect_params.damperVelocity, _effect_params.damperMaxVelocity)) * 3;
+		force = ConditionForceCalculator(effect, metric, 1.0f ,condition) * _gains.damperGain /255;
+		if (useForceDirectionForConditionEffect) {
+				force *= angle_ratio;
+			}
+		break;
+	case USB_EFFECT_INERTIA://10
+		setFilterParameter();
+	    metric = inertiaFilter.filterIn (NormalizeRange(_effect_params.inertiaAcceleration,_effect_params.inertiaMaxAcceleration)) * 5;
+
+			force = -1 * ConditionForceCalculator(effect, metric, 1.0f, condition) * _gains.inertiaGain /255;
+
+		if (useForceDirectionForConditionEffect) {
+				force *= angle_ratio;
+			}
+		break;
+	case USB_EFFECT_FRICTION://11
+
+		setFilterParameter();
+		metric = frictionFilter.filterIn (NormalizeRange(_effect_params.frictionPositionChange,_effect_params.frictionMaxPositionChange))*5;
+			force = ConditionForceCalculator(effect, metric ,1.0f, condition) * _gains.frictionGain /255;
+			if (useForceDirectionForConditionEffect) {
+				force *= angle_ratio;
+			}
+			break;
     case USB_EFFECT_CUSTOM: //12
       break;
     }
@@ -183,7 +174,7 @@ void forceCalculator (int32_t *forces)
 {
   forces[0] = 0;
   forces[1] = 0;
-  //int32_t force = 0;
+
   FFB_effect_activated = false;
   for (int id = 0; id < MAX_EFFECTS; id++)
     {
@@ -369,7 +360,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   if (metric < (cpOffset - deadBand))
     {
 
-      tempForce = (metric - (cpOffset - deadBand)) * negativeCoefficient * scale;
+      tempForce = (metric -  (float)1.0f *(cpOffset - deadBand)/10000) * negativeCoefficient * scale;
       //tempForce = (metric -  scale * (cpOffset - deadBand) / 10000) * negativeCoefficient;
 
 
@@ -379,7 +370,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   else if (metric > (cpOffset + deadBand))
     {
 
-      tempForce = (metric -  (cpOffset + deadBand)) * positiveCoefficient * scale;
+      tempForce = (metric - (float)1.0f *(cpOffset + deadBand)/10000) * positiveCoefficient * scale;
       //tempForce = (metric -  scale * (cpOffset + deadBand) / 10000) * positiveCoefficient;
       tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
     }
@@ -387,7 +378,8 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
 
 	  tempForce = -tempForce * effect.gain / 10000;
 	  //tempForce = -tempForce * effect.gain / 0x7FFF;
-  switch (effect.effectType)
+ /*
+	  switch (effect.effectType)
     {
     case USB_EFFECT_DAMPER:
     	setFilterParameter();
@@ -404,8 +396,10 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
     default:
       break;
     }
+    */
   //tempForce = map(tempForce, -10000, 10000, -255, 255);
   tempForce = map (tempForce, -10000, 10000, -32767, 32767);	//16 bits
+  encoder.Update_Metric_by_Position();
   return (int32_t) tempForce;
 }
 
@@ -473,4 +467,9 @@ int8_t setEffectParams (EffectParams *_effect_params)
       return 0;
     }
   return -1;
+}
+
+float NormalizeRange (int32_t x, int32_t maxValue)
+{
+  return (float) x * 1.00 / maxValue;
 }

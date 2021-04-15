@@ -56,13 +56,13 @@ void QEncoder::initVariables ()
 {
   for (int i = 0; i < NUM_OF_ENC_AXIS; i++)
     {
-      axis[i].currentPosition = 0;
-      axis[i].lastPosition = 0;
-      axis[i].correctPosition = 0;
-      axis[i].maxAcceleration = 0;
-      axis[i].maxVelocity = 0;
-      axis[i].lastEncoderTime = HAL_GetTick ();
-      axis[i].lastVelocity = 0;
+      axis[i].current_Position = 0;
+      axis[i].last_Position = 0;
+      axis[i].correct_Position = 0;
+      axis[i].max_Acceleration = 0;
+      axis[i].max_Speed = 0;
+      axis[i].last_EncoderTime = HAL_GetTick ();
+      axis[i].last_Speed = 0;
       axis[i].minValue = DIGITAL_AXIS_MIN;
       axis[i].maxValue = DIGITAL_AXIS_MAX;
 
@@ -179,7 +179,7 @@ void QEncoder::updatePosition (uint8_t idx)
     QEncoder::Check_Axis_XY_Invert_Change ();
    if (axis[idx].inverted == true)
        read_Position = ~read_Position;
-   axis[idx].currentPosition = read_Position;
+   axis[idx].current_Position = read_Position;
 
 }
 
@@ -187,34 +187,33 @@ void QEncoder::Update_Metric_by_Time()
 {
 	for(int idx = 0; idx < 2 ;idx++)
 	{
-		 axis[idx].positionChange = axis[idx].currentPosition - axis[idx].lastPosition;
+		 axis[idx].position_Changed = axis[idx].current_Position - axis[idx].last_Position;
 			  uint32_t currentEncoderTime = HAL_GetTick ();
-			  uint32_t diffTime = (currentEncoderTime - axis[idx].lastEncoderTime);
+			  uint32_t diffTime = (currentEncoderTime - axis[idx].last_EncoderTime);
 			  if (diffTime > 0)
 			    {
-			      axis[idx].currentVelocity = axis[idx].positionChange / diffTime;
-			      axis[idx].currentAcceleration = (abs(axis[idx].currentVelocity) - abs (axis[idx].lastVelocity)) / diffTime;
-			      axis[idx].lastEncoderTime = currentEncoderTime;
-			      axis[idx].lastVelocity = axis[idx].currentVelocity;
+			      axis[idx].current_Speed = (axis[idx].position_Changed / diffTime) * 2;
+			      axis[idx].current_Acceleration = (abs(axis[idx].current_Speed) - abs (axis[idx].last_Speed)) / diffTime;
+			      axis[idx].last_EncoderTime = currentEncoderTime;
+			      axis[idx].last_Speed = axis[idx].current_Speed;
 			    }
-			  axis[idx].lastPosition = axis[idx].currentPosition;
+			  axis[idx].last_Position = axis[idx].current_Position;
 	}
 
 }
 
-void QEncoder::Update_Metric_by_Encoder()
+void QEncoder::Update_Metric_by_Position()
 {
-	for(int idx = 0; idx<2;idx++)
+	for(int idx = 0; idx < 2 ;idx++)
 		{
-			axis[idx].positionChange = NormalizeRange(axis[idx].currentPosition, axis[idx].maxValue);
-			axis[idx].currentVelocity = axis[idx].positionChange - NormalizeRange(axis[idx].lastPosition, axis[idx].maxValue);
-			axis[idx].currentAcceleration = axis[idx].currentVelocity - axis[idx].lastVelocity;
-			axis[idx].lastVelocity = axis[idx].currentVelocity;
-			axis[idx].lastPosition = axis[idx].currentPosition;
+			axis[idx].position_Changed = axis[idx].current_Position - axis[idx].last_Position;
+			axis[idx].current_Speed = axis[idx].current_Position - axis[idx].last_Position;
+			axis[idx].current_Acceleration = axis[idx].current_Speed - axis[idx].last_Speed;
+			axis[idx].last_Speed = axis[idx].current_Speed;
+			axis[idx].last_Position = axis[idx].current_Position;
 		}
+
 }
 
-float QEncoder::NormalizeRange (int32_t x, int32_t maxValue)
-{
-  return (float) x * 1.00 / maxValue;
-}
+
+

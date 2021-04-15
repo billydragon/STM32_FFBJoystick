@@ -19,22 +19,22 @@ extern "C"
 #endif
   struct __attribute__((packed)) TDF_AXIS
   {
-    volatile uint32_t cPR;
-    volatile uint16_t maxAngle;
+    //volatile uint32_t cPR;
+    //volatile uint16_t maxAngle;
     volatile int32_t maxValue;
     volatile int32_t minValue;
     volatile bool inverted;
-    volatile uint32_t lastEncoderTime;
-    volatile int32_t currentPosition;
-    volatile int32_t lastPosition;
-    volatile int32_t correctPosition;
-    volatile float currentVelocity;
-    volatile float lastVelocity;
-    volatile float maxVelocity;
-    volatile float currentAcceleration;
-    volatile float maxAcceleration;
-    volatile float positionChange;
-    volatile float maxPositionChange;
+    volatile uint32_t last_EncoderTime;
+    volatile int32_t current_Position;
+    volatile int32_t last_Position;
+    volatile int32_t correct_Position;
+    volatile float current_Speed;
+    volatile float last_Speed;
+    volatile float max_Speed;
+    volatile float current_Acceleration;
+    volatile float max_Acceleration;
+    volatile float position_Changed;
+    volatile float max_Position_Changed;
   };
 
   struct __attribute__((packed)) TDF_BUTTON
@@ -104,7 +104,8 @@ typedef struct //PID state
   void start_joystick(void);
   void Set_Gains(void);
   void SetEffects(void);
-  void CalculateMaxSpeedAndMaxAcceleration();
+  void SetEffects_T (void);
+  void CalculateMaxSpeedAndMaxAcceleration(int ax);
   void Set_PID_Turnings();
   void AutoCalibration(uint8_t idx);
   void gotoPosition(int axis_num, int32_t targetPosition);

@@ -45,8 +45,8 @@ extern "C"
     void timerElapsed (TIM_HandleTypeDef *htim);
     void updatePosition (uint8_t axis);
     void Update_Metric_by_Time();
-    void Update_Metric_by_Encoder();
-    float NormalizeRange (int32_t x, int32_t maxValue);
+    void Update_Metric_by_Position();
+
   private:
     void Check_Axis_XY_Invert_Change ();
 

@@ -75,6 +75,6 @@ void getForce (int32_t *forces);
 int8_t setGains (Gains *_gains);
 //set effect params funtions
 int8_t setEffectParams (EffectParams *_effect_params);
-
+float NormalizeRange (int32_t x, int32_t maxValue);
 void setFilterParameter();
 #endif /* INC_FFB_CALCULATOR_H_ */
