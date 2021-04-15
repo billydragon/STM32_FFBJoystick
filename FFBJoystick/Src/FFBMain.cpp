@@ -331,6 +331,7 @@ void SetEffects_T ()
 		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].max_Acceleration;
 		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
 		 effects[ax].damperMaxVelocity = encoder.axis[ax].max_Speed;
+		 CalculateMaxSpeedAndMaxAcceleration(ax);
 
 	}
 

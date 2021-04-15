@@ -60,7 +60,7 @@ void getForce (int32_t *forces)
 int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParams _effect_params, uint8_t axis)
 {
 
-  uint8_t direction;
+  uint16_t direction;
   uint8_t condition;
   bool useForceDirectionForConditionEffect = (effect.enableAxis == DIRECTION_ENABLE && effect.conditionBlocksCount == 1);
 
@@ -96,38 +96,38 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
     		force = ConstantForceCalculator (effect);
     		if(effect.useEnvelope)
 			   {
-				force += ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.constantGain /255;
+				force += ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.constantGain /10;
 			   }
     		else
     		{
-    			force += force * angle_ratio * _gains.constantGain /255 ;
+    			force += force * angle_ratio * _gains.constantGain /10;
     		}
       break;
     case USB_EFFECT_RAMP: //2
     		force = RampForceCalculator (effect);
     		if(effect.useEnvelope)
     		{
-    			force -= ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.rampGain /255 ;
+    			force -= ApplyEnvelope(effect, (int32_t)force  * angle_ratio) * _gains.rampGain /10;
     		}
     		else
     		{
-    			force -= force * angle_ratio  *  _gains.rampGain /255 ;
+    			force -= force * angle_ratio  *  _gains.rampGain /10;
     		}
       break;
     case USB_EFFECT_SQUARE: //3
-    		force = SquareForceCalculator (effect)  * angle_ratio * _gains.squareGain /255 ;
+    		force = SquareForceCalculator (effect)  * angle_ratio * _gains.squareGain /10 ;
       break;
     case USB_EFFECT_SINE: //4
-    		force = SinForceCalculator (effect)  * angle_ratio * _gains.sineGain /255;
+    		force = SinForceCalculator (effect)  * angle_ratio * _gains.sineGain /10;
       break;
     case USB_EFFECT_TRIANGLE: //5
-    		force = TriangleForceCalculator (effect)  * angle_ratio * _gains.triangleGain /255 ;
+    		force = TriangleForceCalculator (effect)  * angle_ratio * _gains.triangleGain /10 ;
       break;
     case USB_EFFECT_SAWTOOTHDOWN: //6
-    		force = SawtoothDownForceCalculator (effect) * angle_ratio * _gains.sawtoothdownGain /255 ;
+    		force = SawtoothDownForceCalculator (effect) * angle_ratio * _gains.sawtoothdownGain /10;
       break;
     case USB_EFFECT_SAWTOOTHUP: //7
-    		force = SawtoothUpForceCalculator (effect) * angle_ratio * _gains.sawtoothupGain /255 ;
+    		force = SawtoothUpForceCalculator (effect) * angle_ratio * _gains.sawtoothupGain /10;
       break;
     case USB_EFFECT_SPRING://8
 
@@ -183,8 +183,10 @@ void forceCalculator (int32_t *forces)
   for (int id = 0; id < MAX_EFFECTS; id++)
     {
       volatile TEffectState &effect = pidReportHandler.g_EffectStates[id];
+
+
       if ((effect.state == MEFFECTSTATE_PLAYING) && ((effect.elapsedTime <= effect.duration)
-	      || (effect.duration == USB_DURATION_INFINITE))  && !pidReportHandler.devicePaused)
+	      || (effect.duration >= USB_DURATION_INFINITE))  && !pidReportHandler.devicePaused)
     	  {
 			  if (effect.enableAxis == DIRECTION_ENABLE || effect.enableAxis & X_AXIS_ENABLE)
 				{
@@ -353,7 +355,8 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   float positiveCoefficient;
 
   deadBand = effect.conditions[axis].deadBand;
-  cpOffset = effect.conditions[axis].cpOffset;
+  //cpOffset = effect.conditions[axis].cpOffset;
+  cpOffset = effect.conditions[axis].cpOffset * encoder.axis[axis].minValue/10000;
   negativeCoefficient = effect.conditions[axis].negativeCoefficient;
   negativeSaturation = effect.conditions[axis].negativeSaturation;
   positiveSaturation = effect.conditions[axis].positiveSaturation;
@@ -364,7 +367,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   if (metric < (cpOffset - deadBand))
     {
 
-      tempForce = (metric -  (cpOffset - deadBand)/10000) * negativeCoefficient * scale ;
+      tempForce = (metric -  (float)1.0f*(cpOffset - deadBand)/10000) * negativeCoefficient * scale ;
       //tempForce = (metric -  scale * (cpOffset - deadBand) / 10000) * negativeCoefficient;
 
 
@@ -374,7 +377,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   else if (metric > (cpOffset + deadBand))
     {
 
-      tempForce = (metric - (cpOffset + deadBand)/10000) * positiveCoefficient * scale;
+      tempForce = (metric - (float)1.0f*(cpOffset + deadBand)/10000) * positiveCoefficient * scale;
       //tempForce = (metric -  scale * (cpOffset + deadBand) / 10000) * positiveCoefficient;
       tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
     }
@@ -403,17 +406,17 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
     */
   //tempForce = map(tempForce, -10000, 10000, -255, 255);
   tempForce = map (tempForce, -10000, 10000, -32767, 32767);	//16 bits
-  encoder.Update_Metric_by_Time();
+  encoder.Update_Metric_by_Position();
   return (int32_t) tempForce;
 }
 
 
 
-int32_t ApplyGain (uint8_t value, uint8_t gain)
+int32_t ApplyGain (uint16_t value, uint16_t gain)
 {
-  int32_t value_32 = (int16_t) value;
+  int32_t value_32 = (int32_t) value;
   return ((value_32 * gain) / 10000);
-  //return ((value_32 * gain) / 0xFFFF);
+
 }
 
 int32_t ApplyEnvelope (volatile TEffectState &effect, int32_t value)
