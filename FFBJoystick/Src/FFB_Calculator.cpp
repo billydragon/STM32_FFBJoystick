@@ -55,8 +55,9 @@ void getForce (int32_t *forces)
   forceCalculator (forces);
 }
 
-int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
-		EffectParams _effect_params, uint8_t axis)
+
+
+int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParams _effect_params, uint8_t axis)
 {
 
   uint8_t direction;
@@ -131,24 +132,26 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
     case USB_EFFECT_SPRING://8
 
     	metric = NormalizeRange(_effect_params.springPosition,_effect_params.springMaxPosition);
-		force = ConditionForceCalculator(effect, metric, 1.0f, condition) * _gains.springGain /255;
+		force = ConditionForceCalculator(effect, metric, 1.5f, condition) * _gains.springGain /255;
+		//force = force  *(float)effect.magnitude/10000.0f;
 		if (useForceDirectionForConditionEffect) {
 				force *= angle_ratio;
 			}
 		break;
 	case USB_EFFECT_DAMPER://9
 			 setFilterParameter();
-		     metric = damperFilter.filterIn (NormalizeRange(_effect_params.damperVelocity, _effect_params.damperMaxVelocity)) * 3;
-		force = ConditionForceCalculator(effect, metric, 1.0f ,condition) * _gains.damperGain /255;
+		     metric = (float)damperFilter.filterIn (NormalizeRange(_effect_params.damperVelocity, _effect_params.damperMaxVelocity));
+
+		force = ConditionForceCalculator(effect, metric, 4.0f ,condition) * _gains.damperGain /255;
 		if (useForceDirectionForConditionEffect) {
 				force *= angle_ratio;
 			}
 		break;
 	case USB_EFFECT_INERTIA://10
 		setFilterParameter();
-	    metric = inertiaFilter.filterIn (NormalizeRange(_effect_params.inertiaAcceleration,_effect_params.inertiaMaxAcceleration)) * 5;
+	    metric = (float)inertiaFilter.filterIn (NormalizeRange(_effect_params.inertiaAcceleration,_effect_params.inertiaMaxAcceleration));
 
-			force = -1 * ConditionForceCalculator(effect, metric, 1.0f, condition) * _gains.inertiaGain /255;
+	    	    force = -1.0f * ConditionForceCalculator(effect, metric,4.0f, condition) * _gains.inertiaGain /255;
 
 		if (useForceDirectionForConditionEffect) {
 				force *= angle_ratio;
@@ -157,8 +160,9 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains,
 	case USB_EFFECT_FRICTION://11
 
 		setFilterParameter();
-		metric = frictionFilter.filterIn (NormalizeRange(_effect_params.frictionPositionChange,_effect_params.frictionMaxPositionChange))*5;
-			force = ConditionForceCalculator(effect, metric ,1.0f, condition) * _gains.frictionGain /255;
+		metric = (float)frictionFilter.filterIn (NormalizeRange(_effect_params.frictionPositionChange,_effect_params.frictionMaxPositionChange));
+
+			force = ConditionForceCalculator(effect, metric ,4.0f, condition) * _gains.frictionGain /255;
 			if (useForceDirectionForConditionEffect) {
 				force *= angle_ratio;
 			}
@@ -360,7 +364,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   if (metric < (cpOffset - deadBand))
     {
 
-      tempForce = (metric -  (float)1.0f *(cpOffset - deadBand)/10000) * negativeCoefficient * scale;
+      tempForce = (metric -  (cpOffset - deadBand)/10000) * negativeCoefficient * scale ;
       //tempForce = (metric -  scale * (cpOffset - deadBand) / 10000) * negativeCoefficient;
 
 
@@ -370,7 +374,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   else if (metric > (cpOffset + deadBand))
     {
 
-      tempForce = (metric - (float)1.0f *(cpOffset + deadBand)/10000) * positiveCoefficient * scale;
+      tempForce = (metric - (cpOffset + deadBand)/10000) * positiveCoefficient * scale;
       //tempForce = (metric -  scale * (cpOffset + deadBand) / 10000) * positiveCoefficient;
       tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
     }
@@ -399,7 +403,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
     */
   //tempForce = map(tempForce, -10000, 10000, -255, 255);
   tempForce = map (tempForce, -10000, 10000, -32767, 32767);	//16 bits
-  encoder.Update_Metric_by_Position();
+  encoder.Update_Metric_by_Time();
   return (int32_t) tempForce;
 }
 
@@ -437,7 +441,7 @@ int32_t ApplyEnvelope (volatile TEffectState &effect, int32_t value)
     }
 
   newValue *= value;
-  newValue /= 32767;
+  newValue /= 35999;
   //newValue /= 0xFFFF; //16 bits
   return newValue;
 }
@@ -471,5 +475,5 @@ int8_t setEffectParams (EffectParams *_effect_params)
 
 float NormalizeRange (int32_t x, int32_t maxValue)
 {
-  return (float) x * 1.00 / maxValue;
+  return (float) x * 1.0f / maxValue;
 }

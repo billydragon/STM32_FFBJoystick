@@ -192,9 +192,9 @@ void QEncoder::Update_Metric_by_Time()
 			  uint32_t diffTime = (currentEncoderTime - axis[idx].last_EncoderTime);
 			  if (diffTime > 0)
 			    {
-			      axis[idx].current_Speed = (axis[idx].position_Changed / diffTime) * 2;
-			      axis[idx].current_Acceleration = (abs(axis[idx].current_Speed) - abs (axis[idx].last_Speed)) / diffTime;
-			      axis[idx].last_EncoderTime = currentEncoderTime;
+			      axis[idx].current_Speed = (axis[idx].position_Changed / diffTime);
+			      axis[idx].current_Acceleration = (abs(axis[idx].current_Speed) - abs(axis[idx].last_Speed)) / diffTime;
+			      axis[idx].last_EncoderTime = HAL_GetTick ();
 			      axis[idx].last_Speed = axis[idx].current_Speed;
 			    }
 			  axis[idx].last_Position = axis[idx].current_Position;
