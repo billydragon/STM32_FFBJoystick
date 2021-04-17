@@ -21,7 +21,7 @@ IIR::ORDER order = IIR::ORDER::OD1; // Order (OD1 to OD4)
 Filter damperFilter (cutoff_freq_damper, sampling_time_damper, order);
 Filter inertiaFilter (cutoff_freq_damper, sampling_time_damper, order);
 Filter frictionFilter (cutoff_freq_damper, sampling_time_damper, order);
-
+Filter constantFilter (cutoff_freq_damper, sampling_time_damper, order);
 extern USBD_HandleTypeDef hUsbDeviceFS;
 extern FFBConfig config;
 extern QEncoder encoder;
@@ -55,7 +55,55 @@ void getForce (int32_t *forces)
   forceCalculator (forces);
 }
 
+void forceCalculator (int32_t *forces)
+{
+  forces[0] = 0;
+  forces[1] = 0;
 
+  for (int id = 0; id < MAX_EFFECTS; id++)
+    {
+      volatile TEffectState &effect = pidReportHandler.g_EffectStates[id];
+      // If effect has expired make inactive
+      		if (effect.state != EFFECT_STATE_INACTIVE && effect.duration != USB_DURATION_INFINITE &&
+      			HAL_GetTick() > (effect.startTime + effect.duration))
+      		{
+      			effect.state = EFFECT_STATE_INACTIVE;
+      		}
+
+
+      		// Filter out inactive effects
+      		if (effect.state == EFFECT_STATE_INACTIVE)
+      		{
+      			continue;
+      		}
+
+
+      if ((effect.state == MEFFECTSTATE_PLAYING) && ((effect.elapsedTime <= effect.duration)
+	      || (effect.duration >= USB_DURATION_INFINITE))  && !pidReportHandler.devicePaused)
+    	  {
+			  if (effect.enableAxis == DIRECTION_ENABLE || effect.enableAxis & X_AXIS_ENABLE)
+				{
+				  forces[0] += (int32_t) (getEffectForce (effect, m_gains[0], m_effect_params[0], 0));
+
+				}
+
+			  if (effect.enableAxis == DIRECTION_ENABLE || effect.enableAxis & Y_AXIS_ENABLE)
+				{
+				  forces[1] += (int32_t) (getEffectForce (effect, m_gains[1], m_effect_params[1], 1));
+
+				}
+
+    	  }
+
+    }
+  // each effect gain * total effect gain = 10000
+  forces[0] = (int32_t) ((float) 1.00 * forces[0] * m_gains[0].totalGain / 255);
+  // each effect gain * total effect gain = 10000
+  forces[1] = (int32_t) ((float) 1.00 * forces[1] * m_gains[1].totalGain / 255);
+  forces[0] = constrain(forces[0], -32767, 32767);		//16 bits
+  forces[1] = constrain(forces[1], -32767, 32767);
+
+}
 
 int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParams _effect_params, uint8_t axis)
 {
@@ -66,12 +114,11 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
 
   if (effect.enableAxis == DIRECTION_ENABLE)
     {
-      direction = effect.directionX;
-      // If the Direction Enable flag is set, only one Condition Parameter Block is defined
-      if (effect.conditionBlocksCount > 1) {
-              condition = axis;
-         }
-
+		  direction = effect.directionX;
+		  // If the Direction Enable flag is set, only one Condition Parameter Block is defined
+		  if (effect.conditionBlocksCount > 1) {
+				  condition = axis;
+			 }
     }
   else
     {
@@ -149,60 +196,20 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
   return force;
 }
 
-void forceCalculator (int32_t *forces)
-{
-  forces[0] = 0;
-  forces[1] = 0;
 
-  FFB_effect_activated = false;
-  for (int id = 0; id < MAX_EFFECTS; id++)
-    {
-      volatile TEffectState &effect = pidReportHandler.g_EffectStates[id];
-
-
-      if ((effect.state == MEFFECTSTATE_PLAYING) && ((effect.elapsedTime <= effect.duration)
-	      || (effect.duration >= USB_DURATION_INFINITE))  && !pidReportHandler.devicePaused)
-    	  {
-			  if (effect.enableAxis == DIRECTION_ENABLE || effect.enableAxis & X_AXIS_ENABLE)
-				{
-				  forces[0] += (int32_t) (getEffectForce (effect, m_gains[0], m_effect_params[0], 0));
-				  FFB_effect_activated = true;
-				}
-
-			  if (effect.enableAxis == DIRECTION_ENABLE || effect.enableAxis & Y_AXIS_ENABLE)
-				{
-				  forces[1] += (int32_t) (getEffectForce (effect, m_gains[1], m_effect_params[1], 1));
-				  FFB_effect_activated = true;
-				}
-
-    	  }
-
-    }
-  // each effect gain * total effect gain = 10000
-  forces[0] = (int32_t) ((float) 1.00 * forces[0] * m_gains[0].totalGain / 255);
-  // each effect gain * total effect gain = 10000
-  forces[1] = (int32_t) ((float) 1.00 * forces[1] * m_gains[1].totalGain / 255);
-  //forces[0] = constrain(forces[0], -255, 255);
-  //forces[1] = constrain(forces[1], -255, 255);
-  forces[0] = constrain(forces[0], -32767, 32767);		//16 bits
-  forces[1] = constrain(forces[1], -32767, 32767);
-
-
-}
 
 int32_t ConstantForceCalculator (volatile TEffectState &effect)
 {
-
+	constantFilter.setCutoffFreqHZ(2.50f, true);
+	constantFilter.setSamplingTime(0.05f,true);
   float tempforce = ((float) effect.magnitude * (int32_t)(1 + effect.gain))/10000;
-  //float tempforce = ((float) effect.magnitude * (int32_t)(1 + effect.gain))/0xFFFF;
-  //tempforce = map(tempforce, -10000, 10000, -255, 255);			//DAC resulusion 16 bit - remove this
+
   if(effect.useEnvelope)
      {
    	  tempforce = ApplyEnvelope (effect, tempforce);
      }
-
+  tempforce = constantFilter.filterIn(tempforce);
   tempforce = map(tempforce, -10000, 10000, -32767, 32767);
-
   return tempforce;
 }
 

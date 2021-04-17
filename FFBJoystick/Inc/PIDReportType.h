@@ -310,7 +310,6 @@ typedef struct	// FFB: PID Pool Feature Report
 
 ///effect
 #define USB_DURATION_INFINITE		0xFFFF
-
 #define USB_EFFECT_CONSTANT	  		0x01
 #define USB_EFFECT_RAMP				0x02
 #define USB_EFFECT_SQUARE 			0x03
@@ -336,7 +335,7 @@ typedef struct	// FFB: PID Pool Feature Report
 #define FRICTION_FORCE				0xFF
 #define INERTIA_DEADBAND			0x30
 #define FRICTION_DEADBAND			0x30
-
+#define EFFECT_STATE_INACTIVE 		0
 typedef struct
 {
   int16_t cpOffset; // -128..127

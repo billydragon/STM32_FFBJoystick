@@ -35,9 +35,9 @@ USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
 volatile bool RunFirstTime = true;
 
-#define GOBACK_KP		5
+#define GOBACK_KP		10
 #define GOBACK_KI		0
-#define GOBACK_KD		0
+#define GOBACK_KD		0.06
 #define GOBACK_SAMPLETIME	0.01
 
 double Setpoint[2], Input[2], Output[2];
@@ -618,9 +618,6 @@ void Correct_Joystick_Positions(int axis_num, int32_t targetPosition)
 	myPID[axis_num].SetMode(AUTOMATIC);
 	encoder.updatePosition(axis_num);
 	Input[axis_num] = encoder.axis[axis_num].current_Position ;
-
-	//printf("Target: %ld \n", Target);
-
 
 	if(Target > 0)
 	{
