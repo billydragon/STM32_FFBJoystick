@@ -13,7 +13,7 @@
 
 #define DEAD_ZONE	0
 #define DAC_STOP	map(0, -32767, 32767, DAC_MIN, DAC_MAX)
-#define SPEED_SCALE	0.6f
+#define SPEED_SCALE	0.55f
 
 
 extern FFBConfig config;
@@ -38,9 +38,10 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 		{
 			DAC856x_Init ();
 			active = true;
+			active_time = HAL_GetTick();
 
 		}
-		active_time = HAL_GetTick();
+
 
 		int32_t x_force = 0;
 		int32_t y_force = 0;
