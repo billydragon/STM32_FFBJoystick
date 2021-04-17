@@ -62,7 +62,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
 
   uint16_t direction;
   uint8_t condition = 0;
-  bool useForceDirectionForConditionEffect = (effect.enableAxis == DIRECTION_ENABLE && effect.conditionBlocksCount == 1);
+  //bool useForceDirectionForConditionEffect = (effect.enableAxis == DIRECTION_ENABLE && effect.conditionBlocksCount == 1);
 
   if (effect.enableAxis == DIRECTION_ENABLE)
     {
@@ -79,9 +79,11 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
       condition = axis;
     }
 
+  bool rotateConditionForce = (FFB_AXIS_COUNT > 1 && effect.conditionBlocksCount == 1);
   float angle = ((float)direction * 360.0 / 35999.0) * DEG_TO_RAD;
   //float angle = ((float)direction * 360.0 / 65535.0) * DEG_TO_RAD;
   float angle_ratio = axis == 0 ? sin (angle) : -1 * cos (angle);
+  angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
 
   int32_t force = 0;
   float metric =0;
@@ -89,65 +91,56 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
     {
     case USB_EFFECT_CONSTANT: //1
 
-    		force = ConstantForceCalculator (effect)* angle_ratio * _gains.constantGain /127;
+    		force = ConstantForceCalculator (effect) * _gains.constantGain /127;
 
       break;
     case USB_EFFECT_RAMP: //2
-    		force = RampForceCalculator (effect) * angle_ratio  *  _gains.rampGain /127;;
+    		force = RampForceCalculator (effect) * _gains.rampGain /127;;
 
       break;
     case USB_EFFECT_SQUARE: //3
-    		force = SquareForceCalculator (effect)  * angle_ratio * _gains.squareGain /127 ;
+    		force = SquareForceCalculator (effect) * _gains.squareGain /127 ;
       break;
     case USB_EFFECT_SINE: //4
-    		force = SinForceCalculator (effect)  * angle_ratio * _gains.sineGain /127;
+    		force = SinForceCalculator (effect) * angle_ratio * _gains.sineGain /127;
       break;
     case USB_EFFECT_TRIANGLE: //5
-    		force = TriangleForceCalculator (effect)  * angle_ratio * _gains.triangleGain /127 ;
+    		force = TriangleForceCalculator (effect) * _gains.triangleGain /127 ;
       break;
     case USB_EFFECT_SAWTOOTHDOWN: //6
-    		force = SawtoothDownForceCalculator (effect) * angle_ratio * _gains.sawtoothdownGain /127;
+    		force = SawtoothDownForceCalculator (effect) * _gains.sawtoothdownGain /127;
       break;
     case USB_EFFECT_SAWTOOTHUP: //7
-    		force = SawtoothUpForceCalculator (effect) * angle_ratio * _gains.sawtoothupGain /127;
+    		force = SawtoothUpForceCalculator (effect) * _gains.sawtoothupGain /127;
       break;
     case USB_EFFECT_SPRING://8
 
     	metric = NormalizeRange(_effect_params.springPosition,_effect_params.springMaxPosition);
-		force = ConditionForceCalculator(effect, metric, 1.5f, condition) * _gains.springGain /255;
-		//force = force  *(float)effect.magnitude/10000.0f;
-		if (useForceDirectionForConditionEffect) {
-				force *= angle_ratio;
-			}
+		force = ConditionForceCalculator(effect, metric, 1.5f, condition) * angle_ratio * _gains.springGain /255;
+
+
 		break;
 	case USB_EFFECT_DAMPER://9
 			 setFilterParameter();
 		     metric = (float)damperFilter.filterIn (NormalizeRange(_effect_params.damperVelocity, _effect_params.damperMaxVelocity));
 
-		force = ConditionForceCalculator(effect, metric, 4.0f , condition) * _gains.damperGain /255;
-		if (useForceDirectionForConditionEffect) {
-				force *= angle_ratio;
-			}
+		force = ConditionForceCalculator(effect, metric, 4.0f , condition) * angle_ratio * _gains.damperGain /255;
+
 		break;
 	case USB_EFFECT_INERTIA://10
 		setFilterParameter();
 	    metric = (float)inertiaFilter.filterIn (NormalizeRange(_effect_params.inertiaAcceleration,_effect_params.inertiaMaxAcceleration));
 
-	    	    force = -1.0f * ConditionForceCalculator(effect, metric,4.0f, condition) * _gains.inertiaGain /255;
+	    	    force = -1.0f * ConditionForceCalculator(effect, metric,4.0f, condition) * angle_ratio * _gains.inertiaGain /255;
 
-		if (useForceDirectionForConditionEffect) {
-				force *= angle_ratio;
-			}
 		break;
 	case USB_EFFECT_FRICTION://11
 
 		setFilterParameter();
 		metric = (float)frictionFilter.filterIn (NormalizeRange(_effect_params.frictionPositionChange,_effect_params.frictionMaxPositionChange));
 
-			force = ConditionForceCalculator(effect, metric ,4.0f, condition) * _gains.frictionGain /255;
-			if (useForceDirectionForConditionEffect) {
-				force *= angle_ratio;
-			}
+			force = ConditionForceCalculator(effect, metric ,4.0f, condition) * angle_ratio * _gains.frictionGain /255;
+
 			break;
     case USB_EFFECT_CUSTOM: //12
       break;

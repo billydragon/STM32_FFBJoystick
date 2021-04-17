@@ -309,7 +309,7 @@ typedef struct	// FFB: PID Pool Feature Report
 #define HID_EFFECT_PLAYING 		0x10
 
 ///effect
-#define USB_DURATION_INFINITE		0x7FFF
+#define USB_DURATION_INFINITE		0xFFFF
 
 #define USB_EFFECT_CONSTANT	  		0x01
 #define USB_EFFECT_RAMP				0x02
