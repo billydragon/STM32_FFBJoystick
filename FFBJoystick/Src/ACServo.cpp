@@ -18,6 +18,8 @@
 
 extern FFBConfig config;
 
+uint32_t active_time =0;
+
 ACServo::ACServo()
 	{
 		//printf("Init ACServo Driver\n");
@@ -26,11 +28,19 @@ ACServo::ACServo()
 
 void ACServo::set_motor_dac(int32_t * _xy_forces)
 	{
+
+		if((HAL_GetTick() - active_time) > 25000)
+		{
+			active = false;
+		}
+
 		if(active == false)
 		{
 			DAC856x_Init ();
 			active = true;
+
 		}
+		active_time = HAL_GetTick();
 
 		int32_t x_force = 0;
 		int32_t y_force = 0;
