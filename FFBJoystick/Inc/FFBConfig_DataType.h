@@ -65,9 +65,14 @@ extern "C"
 
   typedef struct
    {
-     float Cutoff_Freq;
-     float SamplingTime;
-     float Order;
+     float Constant_CF_Freq;
+     float Constant_SamplingTime;
+     float Damper_CF_Freq;
+     float Damper_SamplingTime;
+     float Inertia_CF_Freq;
+     float Inertia_SamplingTime;
+     float Friction_CF_Freq;
+     float Friction_SamplingTime;
    } __attribute__((packed)) FILTER_PARAM; //pid;
 
   typedef struct

@@ -91,7 +91,8 @@ void PIDReportHandler::EffectOperation (USB_FFBReport_EffectOperation_Output_Dat
       if (data->loopCount > 0)
 	g_EffectStates[data->effectBlockIndex].duration *= data->loopCount;
       if (data->loopCount == 0xFF)
-	g_EffectStates[data->effectBlockIndex].duration = USB_DURATION_INFINITE;
+    	  g_EffectStates[data->effectBlockIndex].duration = USB_DURATION_INFINITE;
+
       StartEffect (data->effectBlockIndex);
     }
   else if (data->operation == 2)
@@ -191,6 +192,10 @@ void PIDReportHandler::SetDownloadForceSample (USB_FFBReport_SetDownloadForceSam
 
 void PIDReportHandler::SetEffect (USB_FFBReport_SetEffect_Output_Data_t *data)
 {
+	uint8_t index = data->effectBlockIndex;
+		if(index > MAX_EFFECTS || index == 0)
+			return;
+
   volatile TEffectState *effect = &g_EffectStates[data->effectBlockIndex];
 
   effect->duration = data->duration;
@@ -229,7 +234,7 @@ void PIDReportHandler::SetPeriodic (USB_FFBReport_SetPeriodic_Output_Data_t *dat
   effect->magnitude = data->magnitude;
   effect->offset = data->offset;
   effect->phase = data->phase;
-  effect->period = data->period;
+  effect->period = constrain(data->period,1,32767); //prevent priod = 0
 }
 
 void PIDReportHandler::SetConstantForce (USB_FFBReport_SetConstantForce_Output_Data_t *data,volatile TEffectState *effect)
