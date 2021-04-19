@@ -181,6 +181,8 @@ void QEncoder::updatePosition (uint8_t idx)
        read_Position = ~read_Position;
    axis[idx].current_Position = read_Position;
 
+
+
 }
 
 void QEncoder::Update_Metric_by_Time()

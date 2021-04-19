@@ -616,7 +616,7 @@ void gotoPosition(int axis_num, int32_t targetPosition) {
     xy_forces[axis_num] = Output[axis_num];
     Motors.SetMotorOutput(xy_forces);
     encoder.Update_Metric_by_Time();
-    CalculateMaxSpeedAndMaxAcceleration (axis_num);
+    CalculateMaxSpeedAndMaxAcceleration(axis_num);
     Send_Debug_Report();
   }
   xy_forces[axis_num] = 0;

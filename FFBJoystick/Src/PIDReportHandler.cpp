@@ -61,7 +61,7 @@ void PIDReportHandler::FreeEffect (uint8_t id)
 {
   if (id > MAX_EFFECTS)
     return;
-  g_EffectStates[id].state = 0;
+  g_EffectStates[id].state = FFB_EFFECT_NONE;
   if (id < nextEID)
     nextEID = id;
 }
