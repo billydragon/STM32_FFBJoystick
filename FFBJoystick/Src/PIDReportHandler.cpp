@@ -33,17 +33,6 @@ uint8_t PIDReportHandler::GetNextFreeEffect (void)
   return id;
 }
 
-void PIDReportHandler::sendStatusReport ()
-{
-
-  uint8_t rp[sizeof(USB_FFBReport_PIDStatus_Input_Data_t)];
-  rp[0] = pidState.reportId;
-  rp[1] = pidState.status;
-  rp[2] = pidState.effectBlockIndex;
-
-  USBD_JOYSTICK_HID_SendReport_FS (
-      rp, sizeof(USB_FFBReport_PIDStatus_Input_Data_t));
-}
 
 void PIDReportHandler::StopAllEffects (void)
 {
@@ -57,7 +46,7 @@ void PIDReportHandler::StartEffect (uint8_t id)
     return;
   g_EffectStates[id].state = MEFFECTSTATE_PLAYING;
   g_EffectStates[id].elapsedTime = 0;
-  g_EffectStates[id].startTime = (uint64_t) HAL_GetTick ();
+  g_EffectStates[id].startTime = (uint64_t) HAL_GetTick();
 }
 
 void PIDReportHandler::StopEffect (uint8_t id)
@@ -89,7 +78,7 @@ void PIDReportHandler::EffectOperation (USB_FFBReport_EffectOperation_Output_Dat
   if (data->operation == 1)
     { // Start
       if (data->loopCount > 0)
-	g_EffectStates[data->effectBlockIndex].duration *= data->loopCount;
+    	  g_EffectStates[data->effectBlockIndex].duration *= data->loopCount;
       if (data->loopCount == 0xFF)
     	  g_EffectStates[data->effectBlockIndex].duration = USB_DURATION_INFINITE;
 
@@ -227,6 +216,14 @@ void PIDReportHandler::SetCondition (USB_FFBReport_SetCondition_Output_Data_t *d
   effect->conditions[axis].deadBand = data->deadBand;
   effect->axesIdx = (axis + 1 > effect->axesIdx) ? (axis + 1) : (effect->axesIdx);
   effect->conditionBlocksCount++;
+  /*
+  if(effect->conditions[axis].positiveSaturation == 0){
+  		effect->conditions[axis].positiveSaturation = 10000;
+  	}
+  	if(effect->conditions[axis].negativeSaturation == 0){
+  		effect->conditions[axis].negativeSaturation = 10000;
+  	}
+  	*/
 }
 
 void PIDReportHandler::SetPeriodic (USB_FFBReport_SetPeriodic_Output_Data_t *data, volatile TEffectState *effect)
@@ -248,6 +245,8 @@ void PIDReportHandler::SetRampForce (USB_FFBReport_SetRampForce_Output_Data_t *d
 {
   effect->startMagnitude = data->startMagnitude;
   effect->endMagnitude = data->endMagnitude;
+  // Full magnitude for envelope calculation. This effect does not have a periodic report
+  effect->magnitude = 10000;
 }
 
 void PIDReportHandler::CreateNewEffect (USB_FFBReport_CreateNewEffect_Feature_Data_t *inData)
@@ -274,69 +273,69 @@ void PIDReportHandler::CreateNewEffect (USB_FFBReport_CreateNewEffect_Feature_Da
 
 void PIDReportHandler::UppackUsbData (uint8_t *data, uint16_t len)
 {
-	 //printf("UppackUsbData: ReportID(%d).\n", data[0]);
+
   uint8_t effectId = data[1]; // effectBlockIndex is always the second byte.
   switch (data[0]) // reportID
     {
     case 1:
-    	 //printf("Effects: SetEffect().\n");
+
       SetEffect ((USB_FFBReport_SetEffect_Output_Data_t*) data);
 
       break;
     case 2:
-    	//printf("Effects: SetEnvelope(%d).\n" ,effectId);
+
       SetEnvelope ((USB_FFBReport_SetEnvelope_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 3:
-    	//printf("Effects: SetCondition(%d).\n",effectId);
+
       SetCondition ((USB_FFBReport_SetCondition_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 4:
-    	//printf("Effects: SetPeriodic(%d).\n",effectId);
+
       SetPeriodic ((USB_FFBReport_SetPeriodic_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 5:
-    	//printf("Effects: SetConstantForce(%d).\n",effectId);
+
       SetConstantForce ((USB_FFBReport_SetConstantForce_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 6:
-    	//printf("Effects: SetRampForce(%d).\n",effectId);
+
       SetRampForce ((USB_FFBReport_SetRampForce_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 7:
-    	//printf("Effects: SetCustomForceData().\n");
+
       SetCustomForceData ((USB_FFBReport_SetCustomForceData_Output_Data_t*) data);
       break;
     case 8:
-    	//printf("Effects: SetDownloadForceSample().\n");
+
       SetDownloadForceSample ((USB_FFBReport_SetDownloadForceSample_Output_Data_t*) data);
       break;
     case 9:
       break;
     case 10:
-    	//printf("Effects: EffectOperation().\n");
+
       EffectOperation ((USB_FFBReport_EffectOperation_Output_Data_t*) data);
-      sendStatusReport ();
+
       break;
     case 11:
-    	//printf("Effects: BlockFree().\n");
+
       BlockFree ((USB_FFBReport_BlockFree_Output_Data_t*) data);
       break;
     case 12:
-    	//printf("Effects: DeviceControl().\n");
+
       DeviceControl ((USB_FFBReport_DeviceControl_Output_Data_t*) data);
-      sendStatusReport ();
+
       break;
     case 13:
-    	//printf("Effects: DeviceGain().\n");
+
       DeviceGain ((USB_FFBReport_DeviceGain_Output_Data_t*) data);
       break;
     case 14:
-    	//printf("Effects: SetCustomForce().\n");
+
       SetCustomForce ((USB_FFBReport_SetCustomForce_Output_Data_t*) data);
       break;
     case 0x11:
-    	//printf("Effects: CreateNewEffect().\n");
+
       CreateNewEffect ((USB_FFBReport_CreateNewEffect_Feature_Data_t*) data);
       break;
     default:

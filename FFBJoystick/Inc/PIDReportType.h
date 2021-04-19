@@ -145,7 +145,7 @@ typedef struct	//FFB: Set Periodic Output Report
   uint16_t magnitude;
   int16_t offset;
   uint16_t phase;	// 0..35999 (=0..359, exp-2)
-  uint16_t period;	// 0..32767 ms
+  uint32_t period;	// 0..32767 ms
 } __attribute__((packed)) USB_FFBReport_SetPeriodic_Output_Data_t;
 
 typedef struct	//FFB: Set ConstantForce Output Report
