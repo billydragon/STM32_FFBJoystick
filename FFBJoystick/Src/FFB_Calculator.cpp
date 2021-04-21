@@ -170,23 +170,31 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
       break;
     case USB_EFFECT_SPRING://8
 
-			metric = NormalizeRange(_effect_params.springPosition,_effect_params.springMaxPosition);
-			force = ConditionForceCalculator(effect, metric, 1.5f, condition) * angle_ratio * _gains.springGain;
+			//metric = NormalizeRange(_effect_params.springPosition,_effect_params.springMaxPosition);
+   	  //force = ConditionForceCalculator(effect, metric, 1.5f, condition) * angle_ratio * _gains.springGain;
+			metric = _effect_params.springPosition;
+			force = ConditionForceCalculator(effect, metric, 0.0004f, condition) * angle_ratio * _gains.springGain;
 		break;
 	case USB_EFFECT_DAMPER://9
 
-		     metric = (float)damperFilter.filterIn(NormalizeRange(_effect_params.damperVelocity, _effect_params.damperMaxVelocity));
-		     force = ConditionForceCalculator(effect, metric, 1.5f , condition) * angle_ratio * _gains.damperGain;
+		     //metric = (float)damperFilter.filterIn(NormalizeRange(_effect_params.damperVelocity, _effect_params.damperMaxVelocity));
+		     //force = ConditionForceCalculator(effect, metric, 1.5f , condition) * angle_ratio * _gains.damperGain;
+		     metric = (float)damperFilter.filterIn(_effect_params.damperVelocity) * .0625f;
+		     force = ConditionForceCalculator(effect, metric, 0.6f , condition) * angle_ratio * _gains.damperGain;
 		break;
 	case USB_EFFECT_INERTIA://10
 
-			metric = (float)inertiaFilter.filterIn (NormalizeRange(_effect_params.inertiaAcceleration,_effect_params.inertiaMaxAcceleration));
-			force = -1.0f * ConditionForceCalculator(effect, metric,1.5f, condition) * angle_ratio * _gains.inertiaGain;
+			//metric = (float)inertiaFilter.filterIn (NormalizeRange(_effect_params.inertiaAcceleration,_effect_params.inertiaMaxAcceleration));
+			//force = -1.0f * ConditionForceCalculator(effect, metric,1.5f, condition) * angle_ratio * _gains.inertiaGain;
+			metric = (float)inertiaFilter.filterIn (_effect_params.inertiaAcceleration * 4);
+			force = ConditionForceCalculator(effect, metric,0.5f, condition) * angle_ratio * _gains.inertiaGain;
 		break;
 	case USB_EFFECT_FRICTION://11
 
-			metric = (float)frictionFilter.filterIn (NormalizeRange(_effect_params.frictionPositionChange,_effect_params.frictionMaxPositionChange));
-			force = ConditionForceCalculator(effect, metric ,1.5f, condition) * angle_ratio * _gains.frictionGain;
+			//metric = (float)frictionFilter.filterIn (NormalizeRange(_effect_params.frictionPositionChange,_effect_params.frictionMaxPositionChange));
+			//force = ConditionForceCalculator(effect, metric ,1.5f, condition) * angle_ratio * _gains.frictionGain;
+			metric = (float)frictionFilter.filterIn (_effect_params.frictionPositionChange) * 0.25f;
+			force = ConditionForceCalculator(effect, metric ,0.08f, condition) * angle_ratio * _gains.frictionGain;
 			break;
     case USB_EFFECT_CUSTOM: //12
       break;
@@ -376,8 +384,8 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   float positiveCoefficient;
 
   deadBand = effect.conditions[axis].deadBand;
-  //cpOffset = effect.conditions[axis].cpOffset;
-  cpOffset = effect.conditions[axis].cpOffset * encoder.axis[axis].minValue/10000;
+  cpOffset = effect.conditions[axis].cpOffset;
+  //cpOffset = effect.conditions[axis].cpOffset * encoder.axis[axis].minValue/10000;
   negativeCoefficient = effect.conditions[axis].negativeCoefficient;
   negativeSaturation = effect.conditions[axis].negativeSaturation;
   positiveSaturation = effect.conditions[axis].positiveSaturation;
@@ -388,19 +396,20 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   if (metric < (cpOffset - deadBand))
     {
 
-      tempForce = (metric -  (float)1.0f*(cpOffset - deadBand)/10000) * negativeCoefficient * scale ;
-      //tempForce = (metric -  scale * (cpOffset - deadBand) / 10000) * negativeCoefficient;
-
-
-      tempForce = (tempForce < -negativeSaturation ? -negativeSaturation : tempForce);
+      //tempForce = (metric -  (float)1.0f*(cpOffset - deadBand)/10000) * negativeCoefficient * scale ;
+	   //tempForce = (tempForce < -negativeSaturation ? -negativeSaturation : tempForce);
+      tempForce = (metric -  (cpOffset - deadBand)) * negativeCoefficient * scale;
+      tempForce = constrain(tempForce,-negativeSaturation,positiveSaturation);
 
     }
   else if (metric > (cpOffset + deadBand))
     {
 
-      tempForce = (metric - (float)1.0f*(cpOffset + deadBand)/10000) * positiveCoefficient * scale;
-      //tempForce = (metric -  scale * (cpOffset + deadBand) / 10000) * positiveCoefficient;
-      tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
+      //tempForce = (metric - (float)1.0f*(cpOffset + deadBand)/10000) * positiveCoefficient * scale;
+	   //tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
+      tempForce = (metric -  (cpOffset + deadBand)) * positiveCoefficient * scale;
+      tempForce = constrain(tempForce,-negativeSaturation,positiveSaturation);
+
     }
 	  else return 0;
 

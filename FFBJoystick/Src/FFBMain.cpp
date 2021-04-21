@@ -315,11 +315,11 @@ void SetEffects ()
 
 		 effects[ax].springPosition = encoder.axis[ax].current_Position;
 		 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
-		 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed * 4; //lastX - posX;
+		 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed; //lastX - posX;
 		 effects[ax].frictionMaxPositionChange = encoder.axis[ax].maxValue;
-		 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration * 4;
+		 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration;
 		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].maxValue;
-		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed * 3;
+		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
 		 effects[ax].damperMaxVelocity = encoder.axis[ax].maxValue;
 		 CalculateMaxSpeedAndMaxAcceleration(ax);
 

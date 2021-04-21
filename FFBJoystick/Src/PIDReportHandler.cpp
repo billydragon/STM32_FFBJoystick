@@ -79,8 +79,8 @@ void PIDReportHandler::EffectOperation (USB_FFBReport_EffectOperation_Output_Dat
     { // Start
       if (data->loopCount > 0)
     	  g_EffectStates[data->effectBlockIndex].duration *= data->loopCount;
-      if (data->loopCount == 0xFF)
-    	  g_EffectStates[data->effectBlockIndex].duration = USB_DURATION_INFINITE;
+      //if (data->loopCount == 0xFF)
+    	  //g_EffectStates[data->effectBlockIndex].duration = USB_DURATION_INFINITE;
 
       StartEffect (data->effectBlockIndex);
     }
