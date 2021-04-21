@@ -260,6 +260,7 @@ void start_joystick ()
 	Update_Joystick_Position();
 
 	SetEffects();
+
 	Set_Gains();
 	getForce (xy_forces);
 
@@ -314,11 +315,11 @@ void SetEffects ()
 
 		 effects[ax].springPosition = encoder.axis[ax].current_Position;
 		 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
-		 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed; //lastX - posX;
+		 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed * 4; //lastX - posX;
 		 effects[ax].frictionMaxPositionChange = encoder.axis[ax].maxValue;
-		 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration;
+		 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration * 4;
 		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].maxValue;
-		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
+		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed * 3;
 		 effects[ax].damperMaxVelocity = encoder.axis[ax].maxValue;
 		 CalculateMaxSpeedAndMaxAcceleration(ax);
 
@@ -327,14 +328,14 @@ void SetEffects ()
 	setEffectParams (effects);
 }
 
-void SetEffects_T ()
+void SetEffects_T () //Test
 {
 
 	for (int ax = 0; ax <2; ax++)
 	{
 
 		 effects[ax].springPosition = encoder.axis[ax].current_Position;
-		 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
+		 effects[ax].springMaxPosition = encoder.axis[ax].max_Position_Changed;
 		 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed; //lastX - posX;
 		 effects[ax].frictionMaxPositionChange = encoder.axis[ax].max_Position_Changed;
 		 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration;
@@ -505,6 +506,8 @@ void findCenter_Auto()
 		xy_forces[X_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 		encoder.updatePosition(X_AXIS);
+		encoder.Update_Metric_by_Time();
+		CalculateMaxSpeedAndMaxAcceleration(X_AXIS);
 		AutoCalibration(X_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[X_LIMIT_MAX].CurrentState == 0);
@@ -518,6 +521,8 @@ void findCenter_Auto()
 		xy_forces[X_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 		encoder.updatePosition(X_AXIS);
+		encoder.Update_Metric_by_Time();
+		CalculateMaxSpeedAndMaxAcceleration(X_AXIS);
 		AutoCalibration(X_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[X_LIMIT_MIN].CurrentState == 0);
@@ -525,8 +530,6 @@ void findCenter_Auto()
 		Motors.SetMotorOutput(xy_forces);
 		HAL_Delay(500);
 
-		encoder.Update_Metric_by_Time();
-		CalculateMaxSpeedAndMaxAcceleration(X_AXIS);
 		Axis_Center= (encoder.axis[X_AXIS].minValue + encoder.axis[X_AXIS].maxValue)/2 ;
 		Axis_Range =  abs(encoder.axis[X_AXIS].minValue) + abs(encoder.axis[X_AXIS].maxValue);
 
@@ -550,6 +553,8 @@ void findCenter_Auto()
 		xy_forces[Y_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT,MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 		encoder.updatePosition(Y_AXIS);
+		encoder.Update_Metric_by_Time();
+		CalculateMaxSpeedAndMaxAcceleration(Y_AXIS);
 		AutoCalibration(Y_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[Y_LIMIT_MAX].CurrentState == 0);
@@ -563,6 +568,8 @@ void findCenter_Auto()
 		xy_forces[Y_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT,MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 		encoder.updatePosition(Y_AXIS);
+		encoder.Update_Metric_by_Time();
+		CalculateMaxSpeedAndMaxAcceleration(Y_AXIS);
 		AutoCalibration(Y_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[Y_LIMIT_MIN].CurrentState == 0);
@@ -570,8 +577,6 @@ void findCenter_Auto()
 		Motors.SetMotorOutput(xy_forces);
 		HAL_Delay(500);
 
-		encoder.Update_Metric_by_Time();
-		CalculateMaxSpeedAndMaxAcceleration(Y_AXIS);
 		Axis_Center= (encoder.axis[Y_AXIS].minValue + encoder.axis[Y_AXIS].maxValue)/2 ;
 		Axis_Range =  abs(encoder.axis[Y_AXIS].minValue) + abs(encoder.axis[Y_AXIS].maxValue);
 		gotoPosition(Y_AXIS, Axis_Center);    //goto center X
