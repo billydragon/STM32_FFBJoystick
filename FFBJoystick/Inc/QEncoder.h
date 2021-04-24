@@ -44,9 +44,7 @@ extern "C"
     void overflowCallback_Y ();
     void timerElapsed (TIM_HandleTypeDef *htim);
     void updatePosition (uint8_t axis);
-    void Update_Metric_by_Time();
-    void Update_Metric_by_Position();
-
+    void Update_Metric(uint32_t idx);
   private:
     void Check_Axis_XY_Invert_Change ();
 

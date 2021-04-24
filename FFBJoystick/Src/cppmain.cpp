@@ -65,19 +65,21 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 		    {
 		      uint8_t bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
 		      if (Buttons[i].CurrentState != bState)
-			{
-			  if ((HAL_GetTick () - Buttons[i].millis_time) > DEBOUNCE_TIME)
-			    {
+		      {
+				  if ((HAL_GetTick () - Buttons[i].millis_time) > DEBOUNCE_TIME)
+					 {
 
-			      Buttons[i].CurrentState = bState;
-			      Buttons[i].millis_time = HAL_GetTick ();
-			    }
-			  else
-			    {
-			      Buttons[i].CurrentState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
-			    }
-			}
+						Buttons[i].CurrentState = bState;
 
+					 }
+				  else
+					 {
+					  for(long d = 0; d < 15000; d++) { __ASM volatile ("NOP"); }
+						Buttons[i].CurrentState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
+
+					 }
+		      }
+		      Buttons[i].millis_time = HAL_GetTick ();
 		      EXTI->PR |= Buttons[i].pinNumber;
 
 		    }
@@ -94,62 +96,70 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 
 void LimitSwitch_trig(uint16_t GPIO_Pin)
 {
-	 uint8_t limitswitch_state = 0;
 
 		  if(GPIO_Pin == Limit_Switch[X_LIMIT_MAX].pinNumber)
 		  {
 			  if ((HAL_GetTick () - Limit_Switch[X_LIMIT_MAX].millis_time) > 5)
 			  {
-				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MAX].Port, Limit_Switch[X_LIMIT_MAX].pinNumber);
-				  Limit_Switch[X_LIMIT_MAX].CurrentState = limitswitch_state;
-				  Limit_Switch[X_LIMIT_MAX].millis_time = HAL_GetTick ();
+
+				  Limit_Switch[X_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MAX].Port, Limit_Switch[X_LIMIT_MAX].pinNumber);
+
 			  }
 			  else
 			  {
+				  for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
 				  Limit_Switch[X_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MAX].Port, Limit_Switch[X_LIMIT_MAX].pinNumber);
+
 			  }
+			     Limit_Switch[X_LIMIT_MAX].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Limit_Switch[X_LIMIT_MAX].pinNumber;
 		  }
 		  else if(GPIO_Pin == Limit_Switch[X_LIMIT_MIN].pinNumber)
 		  {
 			  if ((HAL_GetTick () - Limit_Switch[X_LIMIT_MIN].millis_time) > 5)
 			  {
-				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MIN].Port, Limit_Switch[X_LIMIT_MIN].pinNumber);
-				  Limit_Switch[X_LIMIT_MIN].CurrentState = limitswitch_state;
-				  Limit_Switch[X_LIMIT_MIN].millis_time = HAL_GetTick ();
+
+				  Limit_Switch[X_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MIN].Port, Limit_Switch[X_LIMIT_MIN].pinNumber);
+
 			  }
 			  else
 			  {
+				  for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
 				  Limit_Switch[X_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MIN].Port, Limit_Switch[X_LIMIT_MIN].pinNumber);
 			  }
+			     Limit_Switch[X_LIMIT_MIN].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Limit_Switch[X_LIMIT_MIN].pinNumber;
 		  }
 		  else if(GPIO_Pin == Limit_Switch[Y_LIMIT_MAX].pinNumber)
 		  {
 			  if ((HAL_GetTick () - Limit_Switch[Y_LIMIT_MAX].millis_time) > 5)
 			  {
-				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MAX].Port, Limit_Switch[Y_LIMIT_MAX].pinNumber);
-				  Limit_Switch[Y_LIMIT_MAX].CurrentState = limitswitch_state;
-				  Limit_Switch[Y_LIMIT_MAX].millis_time = HAL_GetTick ();
+
+				  Limit_Switch[Y_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MAX].Port, Limit_Switch[Y_LIMIT_MAX].pinNumber);
+
 			  }
 			  else
 			  {
+				  for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
 				  Limit_Switch[Y_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MAX].Port, Limit_Switch[Y_LIMIT_MAX].pinNumber);
 			  }
+			     Limit_Switch[Y_LIMIT_MAX].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Limit_Switch[Y_LIMIT_MAX].pinNumber;
 		  }
 		  else if (GPIO_Pin == Limit_Switch[Y_LIMIT_MIN].pinNumber)
 		  {
 			  if ((HAL_GetTick () - Limit_Switch[Y_LIMIT_MIN].millis_time) > 5)
 			  {
-				  limitswitch_state = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MIN].Port, Limit_Switch[Y_LIMIT_MIN].pinNumber);
-				  Limit_Switch[Y_LIMIT_MIN].CurrentState = limitswitch_state;
-				  Limit_Switch[Y_LIMIT_MIN].millis_time = HAL_GetTick ();
+
+				  Limit_Switch[Y_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MIN].Port, Limit_Switch[Y_LIMIT_MIN].pinNumber);
+
 			  }
 			  else
 			  {
+				  for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
 				  Limit_Switch[Y_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MIN].Port, Limit_Switch[Y_LIMIT_MIN].pinNumber);
 			  }
+			     Limit_Switch[Y_LIMIT_MIN].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Limit_Switch[Y_LIMIT_MIN].pinNumber;
 		  }
 

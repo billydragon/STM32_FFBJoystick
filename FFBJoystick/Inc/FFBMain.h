@@ -86,6 +86,9 @@ extern "C"
 
 #define USBLOG_INTERVAL		10000
 
+#define EFFECT_CALC_BY_TIME	1
+
+
 typedef struct //PID state
 {
 	int32_t xy_forces[2];
@@ -104,7 +107,6 @@ typedef struct //PID state
   void start_joystick(void);
   void Set_Gains(void);
   void SetEffects(void);
-  void SetEffects_T (void);
   void CalculateMaxSpeedAndMaxAcceleration(int ax);
   void Set_PID_Turnings();
   void AutoCalibration(uint8_t idx);

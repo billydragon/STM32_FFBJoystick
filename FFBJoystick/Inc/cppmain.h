@@ -49,6 +49,7 @@ extern "C"
 #include "types.h"
 #include "usb_device.h"
 #include "usbd_def.h"
+#include "cmsis_compiler.h"
 
 
 	extern uint8_t * JoystickHIDReportDescr;

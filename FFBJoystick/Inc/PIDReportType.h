@@ -336,6 +336,11 @@ typedef struct	// FFB: PID Pool Feature Report
 #define INERTIA_DEADBAND			0x30
 #define FRICTION_DEADBAND			0x30
 #define EFFECT_STATE_INACTIVE 		0
+
+// Only include these for cpp
+#ifdef __cplusplus
+
+
 typedef struct
 {
   int16_t cpOffset; // -128..127
@@ -371,4 +376,6 @@ typedef struct
   bool useEnvelope;
 } TEffectState;
 
+
+#endif
 #endif /* INC_PIDREPORTTYPE_H_ */

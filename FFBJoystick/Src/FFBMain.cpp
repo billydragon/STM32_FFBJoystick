@@ -77,6 +77,7 @@ void init_Joystick ()
 {
 
   config.begin ();
+  InitBiquadLp();
   Set_PID_Turnings();
 
   for (int i = 0; i < NUM_OF_ANALOG_AXIS; i++)
@@ -257,13 +258,11 @@ void start_joystick ()
 		RunFirstTime = false;
 	}
 
-	Update_Joystick_Position();
+	   Update_Joystick_Position();
 
-	SetEffects();
-
-	Set_Gains();
-	getForce (xy_forces);
-
+	   SetEffects();
+		Set_Gains();
+		getForce (xy_forces);
 /*
  if (config.SysConfig.AppConfig.AutoCenter == true)
     {
@@ -307,7 +306,8 @@ void Send_Debug_Report()
 
 }
 
-void SetEffects ()
+
+void SetEffects() //Test
 {
 
 	for (int ax = 0; ax <2; ax++)
@@ -321,28 +321,7 @@ void SetEffects ()
 		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].maxValue;
 		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
 		 effects[ax].damperMaxVelocity = encoder.axis[ax].maxValue;
-		 CalculateMaxSpeedAndMaxAcceleration(ax);
 
-	}
-
-	setEffectParams (effects);
-}
-
-void SetEffects_T () //Test
-{
-
-	for (int ax = 0; ax <2; ax++)
-	{
-
-		 effects[ax].springPosition = encoder.axis[ax].current_Position;
-		 effects[ax].springMaxPosition = encoder.axis[ax].max_Position_Changed;
-		 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed; //lastX - posX;
-		 effects[ax].frictionMaxPositionChange = encoder.axis[ax].max_Position_Changed;
-		 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration;
-		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].max_Acceleration;
-		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
-		 effects[ax].damperMaxVelocity = encoder.axis[ax].max_Speed;
-		 CalculateMaxSpeedAndMaxAcceleration(ax);
 
 	}
 
@@ -506,8 +485,7 @@ void findCenter_Auto()
 		xy_forces[X_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 		encoder.updatePosition(X_AXIS);
-		encoder.Update_Metric_by_Time();
-		CalculateMaxSpeedAndMaxAcceleration(X_AXIS);
+
 		AutoCalibration(X_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[X_LIMIT_MAX].CurrentState == 0);
@@ -521,8 +499,6 @@ void findCenter_Auto()
 		xy_forces[X_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 		encoder.updatePosition(X_AXIS);
-		encoder.Update_Metric_by_Time();
-		CalculateMaxSpeedAndMaxAcceleration(X_AXIS);
 		AutoCalibration(X_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[X_LIMIT_MIN].CurrentState == 0);
@@ -545,7 +521,7 @@ void findCenter_Auto()
 		encoder.axis[Y_AXIS].minValue =0;
 		encoder.axis[Y_AXIS].maxValue =0;
 		encoder.setPos(Y_AXIS, 0);
-		//Motors.MotorDriverOn(Y_AXIS);
+		Motors.MotorDriverOn(Y_AXIS);
 		Limit_Switch[Y_LIMIT_MAX].CurrentState = 0;
 
 		do //Y MAX
@@ -553,8 +529,7 @@ void findCenter_Auto()
 		xy_forces[Y_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT,MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 		encoder.updatePosition(Y_AXIS);
-		encoder.Update_Metric_by_Time();
-		CalculateMaxSpeedAndMaxAcceleration(Y_AXIS);
+
 		AutoCalibration(Y_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[Y_LIMIT_MAX].CurrentState == 0);
@@ -568,8 +543,6 @@ void findCenter_Auto()
 		xy_forces[Y_AXIS] = -map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT,MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 		encoder.updatePosition(Y_AXIS);
-		encoder.Update_Metric_by_Time();
-		CalculateMaxSpeedAndMaxAcceleration(Y_AXIS);
 		AutoCalibration(Y_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[Y_LIMIT_MIN].CurrentState == 0);
@@ -620,8 +593,6 @@ void gotoPosition(int axis_num, int32_t targetPosition) {
 
     xy_forces[axis_num] = Output[axis_num];
     Motors.SetMotorOutput(xy_forces);
-    encoder.Update_Metric_by_Time();
-    CalculateMaxSpeedAndMaxAcceleration(axis_num);
     Send_Debug_Report();
   }
   xy_forces[axis_num] = 0;
@@ -667,25 +638,6 @@ void Correct_Joystick_Positions(int axis_num, int32_t targetPosition)
 
 	    xy_forces[axis_num] = 0;
 		Motors.SetMotorOutput(xy_forces);
-
-}
-
-
-void CalculateMaxSpeedAndMaxAcceleration(int ax)
-{
-
-		  if (encoder.axis[ax].max_Speed < abs(encoder.axis[ax].current_Speed))
-		{
-		  encoder.axis[ax].max_Speed = abs(encoder.axis[ax].current_Speed);
-		}
-		  if(encoder.axis[ax].max_Acceleration < abs(encoder.axis[ax].current_Acceleration))
-		{
-		  encoder.axis[ax].max_Acceleration = abs(encoder.axis[ax].current_Acceleration);
-		}
-		  if(encoder.axis[ax].max_Position_Changed < abs(encoder.axis[ax].position_Changed))
-		{
-		  encoder.axis[ax].max_Position_Changed = abs(encoder.axis[ax].position_Changed);
-		}
 
 }
 

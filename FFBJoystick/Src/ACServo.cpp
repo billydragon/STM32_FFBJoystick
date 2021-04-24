@@ -13,7 +13,7 @@
 
 #define DEAD_ZONE	0
 #define DAC_STOP	map(0, -32767, 32767, DAC_MIN, DAC_MAX)
-#define SPEED_SCALE	0.55f
+
 
 
 extern FFBConfig config;
@@ -62,16 +62,19 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 		int32_t y_torque_min = map(config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Min_Torque,MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 		int32_t y_torque_max = map(config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Torque,MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 
+
+		float SPEED_SCALE_X = 0.6f;//config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Speed/config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Torque;
+		float SPEED_SCALE_Y = 0.6f;//config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Speed/config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Torque;
 		//Speed X . Torque X
 		 if(_xy_forces[X_AXIS] - x_force_dead_zone > 0)
 		 {
-			 x_speed = constrain(_xy_forces[X_AXIS], x_speed_min, x_speed_max) * SPEED_SCALE;
+			 x_speed = constrain(_xy_forces[X_AXIS], x_speed_min, x_speed_max) * SPEED_SCALE_X;
 			 x_force = constrain(_xy_forces[X_AXIS], x_torque_min, x_torque_max);
 
 		 }
 		 else if (_xy_forces[X_AXIS] + x_force_dead_zone  < 0)
 		 {
-			 x_speed = constrain(_xy_forces[X_AXIS], -x_speed_max, -x_speed_min) * SPEED_SCALE ;
+			 x_speed = constrain(_xy_forces[X_AXIS], -x_speed_max, -x_speed_min) * SPEED_SCALE_X ;
 			 x_force = constrain(_xy_forces[X_AXIS], -x_torque_max, -x_torque_min);
 
 		 }
@@ -90,13 +93,13 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 		 //Speed Y, Torque Y
 		 if(_xy_forces[Y_AXIS] - y_force_dead_zone > 0)
 		 {
-			 y_speed = constrain(_xy_forces[Y_AXIS], y_speed_min, y_speed_max) * SPEED_SCALE;
+			 y_speed = constrain(_xy_forces[Y_AXIS], y_speed_min, y_speed_max) * SPEED_SCALE_Y;
 			 y_force = constrain(_xy_forces[Y_AXIS], y_torque_min, y_torque_max);
 
 		 }
 		 else if (_xy_forces[Y_AXIS] + y_force_dead_zone < 0)
 		 {
-			 y_speed = constrain(_xy_forces[Y_AXIS],-y_speed_max,-y_speed_min) * SPEED_SCALE;
+			 y_speed = constrain(_xy_forces[Y_AXIS],-y_speed_max,-y_speed_min) * SPEED_SCALE_Y;
 			 y_force = constrain(_xy_forces[Y_AXIS], -y_torque_max, -y_torque_min);
 
 		 }
