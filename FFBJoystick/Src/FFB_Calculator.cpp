@@ -24,10 +24,15 @@ uint32_t cfFilter_f = calcfrequency/2; // 500 = off
 const float cfFilter_q = 0.8;
 
 
-Biquad DamperFilterLp(BiquadType::lowpass, (float)damper_f / (float)calcfrequency, damper_q, (float)0.0);
-Biquad InertiaFilterLp(BiquadType::lowpass, (float)inertia_f / (float)calcfrequency, inertia_q, (float)0.0);
-Biquad FrictionFilterLp(BiquadType::lowpass, (float)friction_f / (float)calcfrequency, friction_q, (float)0.0);
-Biquad ConstantFilterLp(BiquadType::lowpass, (float)cfFilter_f / (float)calcfrequency, cfFilter_q, (float)0.0);
+//Biquad DamperFilterLp(BiquadType::lowpass, (float)damper_f / (float)calcfrequency, damper_q, (float)0.0);
+//Biquad InertiaFilterLp(BiquadType::lowpass, (float)inertia_f / (float)calcfrequency, inertia_q, (float)0.0);
+//Biquad FrictionFilterLp(BiquadType::lowpass, (float)friction_f / (float)calcfrequency, friction_q, (float)0.0);
+//Biquad ConstantFilterLp(BiquadType::lowpass, (float)cfFilter_f / (float)calcfrequency, cfFilter_q, (float)0.0);
+
+Biquad * DamperFilterLp[FFB_AXIS_COUNT];
+Biquad * InertiaFilterLp[FFB_AXIS_COUNT];
+Biquad * FrictionFilterLp[FFB_AXIS_COUNT];
+Biquad * ConstantFilterLp[FFB_AXIS_COUNT];
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 extern FFBConfig config;
@@ -43,10 +48,10 @@ EffectParams *m_effect_params;
 
 bool FFB_effect_activated = false;
 
-void setConstantFilter();
-void setDamperFilter();
-void setInertiaFilter();
-void setFrictionFilter();
+void setConstantFilter(int ax);
+void setDamperFilter(int ax);
+void setInertiaFilter(int ax);
+void setFrictionFilter(int ax);
 
 /*
 void setFilterParameter()
@@ -69,20 +74,56 @@ void setFilterParameter()
 void InitBiquadLp()
 {
 
-		ConstantFilterLp.setBiquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Constant_CF_Freq / (float)calcfrequency,
+	for(int i = 0; i < FFB_AXIS_COUNT; i++)
+	{
+		if(ConstantFilterLp[i] != nullptr )
+		{
+		ConstantFilterLp[i]->setBiquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Constant_CF_Freq / (float)calcfrequency,
 											config.SysConfig.Filter_Parameter.Constant_SamplingTime, (float)0.0);
+		}
+		else
+		{
+			ConstantFilterLp[i] = new Biquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Constant_CF_Freq / (float)calcfrequency,
+														config.SysConfig.Filter_Parameter.Constant_SamplingTime, (float)0.0);
+		}
 
-		DamperFilterLp.setBiquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Damper_CF_Freq / (float)calcfrequency,
-											 config.SysConfig.Filter_Parameter.Damper_SamplingTime, (float)0.0);
+		if(DamperFilterLp[i] != nullptr)
+		{
+			DamperFilterLp[i]->setBiquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Damper_CF_Freq / (float)calcfrequency,
+														 config.SysConfig.Filter_Parameter.Damper_SamplingTime, (float)0.0);
+		}
+		else
+		{
+			DamperFilterLp[i] = new Biquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Damper_CF_Freq / (float)calcfrequency,
+													 config.SysConfig.Filter_Parameter.Damper_SamplingTime, (float)0.0);
+		}
 
-		FrictionFilterLp.setBiquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Friction_CF_Freq / (float)calcfrequency,
-												config.SysConfig.Filter_Parameter.Friction_SamplingTime, (float)0.0);
+		if(FrictionFilterLp[i] != nullptr)
+		{
+			FrictionFilterLp[i]->setBiquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Friction_CF_Freq / (float)calcfrequency,
+													config.SysConfig.Filter_Parameter.Friction_SamplingTime, (float)0.0);
+		}
+		else
+		{
+			FrictionFilterLp[i] = new Biquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Friction_CF_Freq / (float)calcfrequency,
+														config.SysConfig.Filter_Parameter.Friction_SamplingTime, (float)0.0);
+		}
 
-		InertiaFilterLp.setBiquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Inertia_CF_Freq / (float)calcfrequency,
-											  config.SysConfig.Filter_Parameter.Inertia_SamplingTime, (float)0.0);
+		if(InertiaFilterLp[i] != nullptr)
+		{
+			InertiaFilterLp[i]->setBiquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Inertia_CF_Freq / (float)calcfrequency,
+												  config.SysConfig.Filter_Parameter.Inertia_SamplingTime, (float)0.0);
+		}
+		else
+		{
+			InertiaFilterLp[i] = new Biquad(BiquadType::lowpass, config.SysConfig.Filter_Parameter.Inertia_CF_Freq / (float)calcfrequency,
+													  config.SysConfig.Filter_Parameter.Inertia_SamplingTime, (float)0.0);
+		}
+
+	}
 }
 
-void setConstantFilter()
+void setConstantFilter(int ax)
 {
 	float freq = config.SysConfig.Filter_Parameter.Constant_CF_Freq;
 	float q = config.SysConfig.Filter_Parameter.Constant_SamplingTime;
@@ -91,12 +132,12 @@ void setConstantFilter()
 	}
 	cfFilter_f = constrain(freq, 1, calcfrequency / 2);
 	float f = (float)cfFilter_f / (float)calcfrequency;
-	ConstantFilterLp.setFc(f);
-	ConstantFilterLp.setQ(q);
+	ConstantFilterLp[ax]->setFc(f);
+	ConstantFilterLp[ax]->setQ(q);
 
 }
 
-void setDamperFilter()
+void setDamperFilter(int ax)
 {
 	float freq = config.SysConfig.Filter_Parameter.Damper_CF_Freq;
 	float q = config.SysConfig.Filter_Parameter.Damper_SamplingTime;
@@ -105,12 +146,12 @@ void setDamperFilter()
 	}
 	damper_f = constrain(freq, 1, calcfrequency / 2);
 	float f = (float)damper_f / (float)calcfrequency;
-	DamperFilterLp.setFc(f);
-	DamperFilterLp.setQ(q);
+	DamperFilterLp[ax]->setFc(f);
+	DamperFilterLp[ax]->setQ(q);
 
 }
 
-void setInertiaFilter()
+void setInertiaFilter(int ax)
 {
 	float freq = config.SysConfig.Filter_Parameter.Inertia_CF_Freq;
 	float q = config.SysConfig.Filter_Parameter.Inertia_SamplingTime;
@@ -119,12 +160,12 @@ void setInertiaFilter()
 	}
 	inertia_f = constrain(freq, 1, calcfrequency / 2);
 	float f = (float)inertia_f / (float)calcfrequency;
-	InertiaFilterLp.setFc(f);
-	InertiaFilterLp.setQ(q);
+	InertiaFilterLp[ax]->setFc(f);
+	InertiaFilterLp[ax]->setQ(q);
 
 }
 
-void setFrictionFilter()
+void setFrictionFilter(int ax)
 {
 	float freq = config.SysConfig.Filter_Parameter.Friction_CF_Freq;
 	float q = config.SysConfig.Filter_Parameter.Friction_SamplingTime;
@@ -133,8 +174,8 @@ void setFrictionFilter()
 	}
 	friction_f = constrain(freq, 1, calcfrequency / 2);
 	float f = (float)friction_f / (float)calcfrequency;
-	FrictionFilterLp.setFc(f);
-	FrictionFilterLp.setQ(q);
+	FrictionFilterLp[ax]->setFc(f);
+	FrictionFilterLp[ax]->setQ(q);
 }
 
 
@@ -171,10 +212,8 @@ void forceCalculator (int32_t *forces)
       			continue;
       		}
 
-
-
       if ((effect.state == MEFFECTSTATE_PLAYING) && ((effect.elapsedTime <= effect.duration)
-	      || (effect.duration >= USB_DURATION_INFINITE))  && !pidReportHandler.devicePaused)
+	      || (effect.duration == USB_DURATION_INFINITE))  && !pidReportHandler.devicePaused)
     	  {
 			  if (effect.enableAxis == DIRECTION_ENABLE || effect.enableAxis & X_AXIS_ENABLE)
 				{
@@ -193,19 +232,12 @@ void forceCalculator (int32_t *forces)
 
     }
 
-
-  // each effect gain * total effect gain = 10000
   forces[0] = (int32_t) ((float) 1.00 * forces[0] * m_gains[0].totalGain / 255);
-  // each effect gain * total effect gain = 10000
   forces[1] = (int32_t) ((float) 1.00 * forces[1] * m_gains[1].totalGain / 255);
 
   forces[0] = constrain(forces[0], -32767, 32767);		//16 bits
   forces[1] = constrain(forces[1], -32767, 32767);
-  //forces[0] = constrain(forces[0], -10000, 10000);		//16 bits
-  //forces[1] = constrain(forces[1], -10000, 10000);
 
-  //forces[0] = map(forces[0], -10000, 10000, -32767, 32767);
-  //forces[1] = map(forces[1], -10000, 10000, -32767, 32767);
 
 }
 
@@ -231,6 +263,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
     }
 
   bool rotateConditionForce = (FFB_AXIS_COUNT > 1 && effect.conditionBlocksCount == 1);
+  //bool rotateConditionForce = (FFB_AXIS_COUNT > 1 && effect.conditionBlocksCount < FFB_AXIS_COUNT);
   //float angle = ((float)direction * 360.0 / 35999.0) * DEG_TO_RAD;
   float angle = ((float)direction * (2*PI) / 36000.0f) * DEG_TO_RAD;
   float angle_ratio = axis == 0 ? sin (angle) : -1 * cos (angle);
@@ -244,10 +277,10 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
     case USB_EFFECT_CONSTANT: //1
     		force = -1.5 * ConstantForceCalculator (effect) * angle_ratio * _gains.constantGain;
 
-    		setConstantFilter();
+    		setConstantFilter(axis);
     		if (cfFilter_f < calcfrequency / 2)
 			{
-    			force = ConstantFilterLp.process(force);
+    			force = ConstantFilterLp[axis]->process(force);
 			}
     		//printf("Constatnt: metric: %f, force: %ld", metric, force);
       break;
@@ -277,22 +310,22 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
    		break;
    	case USB_EFFECT_DAMPER://9
 
-   			setDamperFilter();
-   			metric = DamperFilterLp.process(_effect_params.damperVelocity) * 0.25;	//.0625f;
+   			setDamperFilter(axis);
+   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.25;	//.0625f;
    		   force = ConditionForceCalculator(effect, metric, 0.60f , condition) * angle_ratio * _gains.damperGain;
    		   //printf("Damper: metric: %f, force: %ld\n", metric, force);
    		break;
    	case USB_EFFECT_INERTIA://10
 
-   			setInertiaFilter();
-   			metric = InertiaFilterLp.process(_effect_params.inertiaAcceleration * 4);
+   			setInertiaFilter(axis);
+   			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration * 4);
    			force = ConditionForceCalculator(effect, metric,0.45f, condition) * angle_ratio * _gains.inertiaGain;
    			//printf("Inertia: metric: %f, force: %ld\n", metric, force);
    		break;
    	case USB_EFFECT_FRICTION://11
 
-   			setFrictionFilter();
-   			metric = FrictionFilterLp.process(_effect_params.frictionPositionChange) * 0.25;	//.25;
+   			setFrictionFilter(axis);
+   			metric = FrictionFilterLp[axis]->process(_effect_params.frictionPositionChange) * 0.25;	//.25;
    			force = ConditionForceCalculator(effect, metric , 0.60f, condition) * angle_ratio * _gains.frictionGain;
    			//printf("Friction: metric: %f, force: %ld\n", metric, force);
    			break;
@@ -322,7 +355,6 @@ int32_t ConstantForceCalculator (volatile TEffectState &effect)
 int32_t RampForceCalculator (volatile TEffectState &effect)
 {
 	uint32_t duration = effect.duration;
-	duration = (duration == 0) ? 32767 : duration; // prevent div zero
   int32_t tempforce = effect.startMagnitude + effect.elapsedTime * (effect.endMagnitude - effect.startMagnitude)/ duration;
   tempforce *= (int32_t)(1 + effect.gain) /10000;
 
@@ -543,9 +575,12 @@ int32_t ApplyGain (uint16_t value, uint16_t gain)
 
 int32_t ApplyEnvelope (volatile TEffectState &effect, int32_t value)
 {
-  int32_t magnitude = ApplyGain (effect.magnitude, effect.gain);
-  int32_t attackLevel = ApplyGain (effect.attackLevel, effect.gain);
-  int32_t fadeLevel = ApplyGain (effect.fadeLevel, effect.gain);
+  //int32_t magnitude = ApplyGain (effect.magnitude, effect.gain);
+  //int32_t attackLevel = ApplyGain (effect.attackLevel, effect.gain);
+  //int32_t fadeLevel = ApplyGain (effect.fadeLevel, effect.gain);
+  int32_t magnitude = effect.magnitude;
+  int32_t attackLevel = effect.attackLevel;
+  int32_t fadeLevel = effect.fadeLevel;
   int32_t newValue = magnitude;
   int32_t attackTime = effect.attackTime;
   int32_t fadeTime = effect.fadeTime;
@@ -558,7 +593,7 @@ int32_t ApplyEnvelope (volatile TEffectState &effect, int32_t value)
       newValue /= attackTime;
       newValue += attackLevel;
     }
-  if (elapsedTime > (duration - fadeTime))
+  if (duration != USB_DURATION_INFINITE && elapsedTime > (duration - fadeTime))
     {
       newValue = (magnitude - fadeLevel) * (duration - elapsedTime);
       newValue /= fadeTime;
