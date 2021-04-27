@@ -15,8 +15,7 @@
 #include "PID_v2.h"
 #include "types.h"
 
-
-
+extern PIDReportHandler pidReportHandler;
 Gains gain[2] __attribute__((section("ccmram")));
 EffectParams effects[2]  __attribute__((section("ccmram")));
 int32_t xy_forces[2]  __attribute__((section("ccmram"))) = { 0 };
@@ -35,7 +34,7 @@ USB_LoggerReport_t USBLog;
 uint32_t USBLog_timer =0;
 volatile bool RunFirstTime = true;
 
-#define GOBACK_KP		8.00f
+#define GOBACK_KP		5.00f
 #define GOBACK_KI		0.00f
 #define GOBACK_KD		0.00f
 #define GOBACK_SAMPLETIME	0.001f
@@ -48,7 +47,7 @@ PID  myPID[2] = {PID(&Input[X_AXIS], &Output[X_AXIS], &Setpoint[X_AXIS], Kp[X_AX
 
 Joystick_ Joystick (JOYSTICK_DEFAULT_REPORT_ID, JOYSTICK_TYPE_JOYSTICK, NUM_OF_BUTTONS, NUM_OF_HATSWITCH,
 						true, true, false, // X and Y, Z Axis
-						true, true, false, // Rx, Ry, or Rz
+						false, false, false, // Rx, Ry, or Rz
 						false, false, // rudder or throttle
 						false, false, false) ; // accelerator, brake, steering
 
@@ -263,17 +262,16 @@ void start_joystick ()
 	   SetEffects();
 		Set_Gains();
 		getForce (xy_forces);
-/*
+
  if (config.SysConfig.AppConfig.AutoCenter == true)
     {
-		 if(FFB_effect_activated == false)
+		 if(pidReportHandler.FFB_Active == false)
 		 {
-			 xy_forces[X_AXIS] += (int32_t) AutoCenter_spring(X_AXIS);
-			 xy_forces[Y_AXIS] += (int32_t) AutoCenter_spring(Y_AXIS);
+			 xy_forces[X_AXIS] = (int32_t) AutoCenter_spring(X_AXIS);
+			 xy_forces[Y_AXIS] = (int32_t) AutoCenter_spring(Y_AXIS);
 
 		 }
     }
-*/
 
 	Motors.SetMotorOutput(xy_forces);
 
@@ -360,27 +358,12 @@ void AutoCalibration(uint8_t idx)
 
 float AutoCenter_spring(uint8_t ax)
 {
-	float scale = 0.4f;
-	float negativeSaturation = -32767;
-	float positiveSaturation = 32767;
-	float negativeCoefficient = 32767;
-	float positiveCoefficient = 32767;
-	float metric = effects[ax].springPosition * 1.00 / effects[ax].springMaxPosition;
-	float cpOffset = 0;
-	int32_t deadBand = config.SysConfig.AC_MotorSettings[ax].Dead_Zone;
-	float tempforce = 0;
-	if(metric < (cpOffset - deadBand))
-	{
-		tempforce = (metric - (cpOffset - deadBand)/effects[ax].springMaxPosition) * negativeCoefficient * scale;
-		tempforce = (tempforce < -negativeSaturation ? -negativeSaturation : tempforce);
-	}
-	else if (metric > (cpOffset + deadBand))
-	    {
-		tempforce = (metric - (cpOffset + deadBand)/effects[ax].springMaxPosition) * positiveCoefficient * scale;
-		tempforce = (tempforce > positiveSaturation ? positiveSaturation : tempforce);
-	    }
-	tempforce = -tempforce * gain[ax].springGain/255;
 
+	float Coefficient = 10000;
+	encoder.Update_Metric(ax);
+	float tempforce = encoder.axis[ax].current_Position * Coefficient * 0.0004f * gain[ax].springGain/255;
+	tempforce += encoder.axis[ax].current_Acceleration * Coefficient * 0.01f * gain[ax].damperGain /255;
+	tempforce = -constrain(tempforce, -32767, 32767);
 	return tempforce;
 }
 

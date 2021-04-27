@@ -74,7 +74,7 @@ extern "C"
 #define XY_FORCE_MAX			32767
 #define XY_FORCE_MIN			-32767
 
-#define DEBOUNCE_TIME		   15
+#define DEBOUNCE_TIME		   25
 
 #define REPORT_FORCES_DATA		0x01
 #define REPORT_JOYSTICK_DATA	0x02

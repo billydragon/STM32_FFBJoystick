@@ -47,8 +47,6 @@ struct __attribute__((packed)) EffectParams
 };
 
 
-extern bool FFB_effect_activated;
-
 //force feedback gain
 extern Gains *m_gains;
 

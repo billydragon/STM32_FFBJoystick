@@ -16,6 +16,7 @@
 #define FRICTION_SATURATION 10000
 #define INERTIA_SATURATION 10000
 
+extern PIDReportHandler pidReportHandler;
 float damper_f = 50 , damper_q = 0.2;
 float friction_f = 50 , friction_q = 0.2;
 float inertia_f = 20 , inertia_q = 0.2;
@@ -45,8 +46,6 @@ Gains *m_gains;
 
 //force feedback effect params
 EffectParams *m_effect_params;
-
-bool FFB_effect_activated = false;
 
 void setConstantFilter(int ax);
 void setDamperFilter(int ax);
@@ -190,6 +189,8 @@ void forceCalculator (int32_t *forces)
   forces[0] = 0;
   forces[1] = 0;
 
+  pidReportHandler.FFB_Active = false;
+
   for (int id = 0; id < MAX_EFFECTS; id++)
     {
       volatile TEffectState &effect = pidReportHandler.g_EffectStates[id];
@@ -226,7 +227,7 @@ void forceCalculator (int32_t *forces)
 				  forces[Y_AXIS] += (int32_t) (getEffectForce (effect, m_gains[Y_AXIS], m_effect_params[Y_AXIS], Y_AXIS));
 
 				}
-
+			  pidReportHandler.FFB_Active = true;
     	  }
 			//printf("Force_X: %ld, Force_Y: %ld \n", forces[0], forces[1]);
 
@@ -311,22 +312,22 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
    	case USB_EFFECT_DAMPER://9
 
    			setDamperFilter(axis);
-   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.25;	//.0625f;
-   		   force = ConditionForceCalculator(effect, metric, 0.60f , condition) * angle_ratio * _gains.damperGain;
+   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.25f;	//.0625f;
+   		   force = ConditionForceCalculator(effect, metric, 0.80f , condition) * angle_ratio * _gains.damperGain;
    		   //printf("Damper: metric: %f, force: %ld\n", metric, force);
    		break;
    	case USB_EFFECT_INERTIA://10
 
    			setInertiaFilter(axis);
-   			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration * 4);
-   			force = ConditionForceCalculator(effect, metric,0.45f, condition) * angle_ratio * _gains.inertiaGain;
+   			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration * 4.0f);
+   			force = ConditionForceCalculator(effect, metric,0.40f, condition) * angle_ratio * _gains.inertiaGain;
    			//printf("Inertia: metric: %f, force: %ld\n", metric, force);
    		break;
    	case USB_EFFECT_FRICTION://11
 
    			setFrictionFilter(axis);
-   			metric = FrictionFilterLp[axis]->process(_effect_params.frictionPositionChange) * 0.25;	//.25;
-   			force = ConditionForceCalculator(effect, metric , 0.60f, condition) * angle_ratio * _gains.frictionGain;
+   			metric = FrictionFilterLp[axis]->process(_effect_params.frictionPositionChange) * 0.25f;	//.25;
+   			force = ConditionForceCalculator(effect, metric , 0.80f, condition) * angle_ratio * _gains.frictionGain;
    			//printf("Friction: metric: %f, force: %ld\n", metric, force);
    			break;
 
@@ -624,7 +625,7 @@ int8_t setGains (Gains *_gains)
 }
 
 //set effect params funtions
-int8_t setEffectParams (EffectParams *_effect_params)
+int8_t setEffectParams(EffectParams *_effect_params)
 {
   if (_effect_params != nullptr)
     {

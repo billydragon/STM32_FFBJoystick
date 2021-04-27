@@ -74,7 +74,8 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 					 }
 				  else
 					 {
-					  for(long d = 0; d < 15000; d++) { __ASM volatile ("NOP"); }
+					  for(long d = 0; d < 250000; d++) { __ASM volatile ("NOP"); }
+
 						Buttons[i].CurrentState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
 
 					 }
@@ -91,6 +92,7 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
   		{
 	  LimitSwitch_trig(GPIO_Pin);
   		}
+
 
 }
 

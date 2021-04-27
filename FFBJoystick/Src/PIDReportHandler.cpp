@@ -37,7 +37,10 @@ uint8_t PIDReportHandler::GetNextFreeEffect (void)
 void PIDReportHandler::StopAllEffects (void)
 {
   for (uint8_t id = 0; id <= MAX_EFFECTS; id++)
-    StopEffect (id);
+  {
+	  StopEffect (id);
+  }
+  this->FFB_Active = false;
 }
 
 void PIDReportHandler::StartEffect (uint8_t id)
@@ -47,6 +50,7 @@ void PIDReportHandler::StartEffect (uint8_t id)
   g_EffectStates[id].state = MEFFECTSTATE_PLAYING;
   g_EffectStates[id].elapsedTime = 0;
   g_EffectStates[id].startTime = (uint64_t) HAL_GetTick();
+  this->FFB_Active = true;
 }
 
 void PIDReportHandler::StopEffect (uint8_t id)

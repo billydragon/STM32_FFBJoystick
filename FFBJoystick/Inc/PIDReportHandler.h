@@ -27,12 +27,11 @@ public:
   volatile int32_t inertiaT = 0;
   volatile int16_t oldSpeed = 0;
   volatile int16_t oldAxisPosition = 0;
-  volatile USB_FFBReport_PIDStatus_Input_Data_t pidState =
-    { 2, 30, 0 };
+  volatile USB_FFBReport_PIDStatus_Input_Data_t pidState = { 2, 30, 0 };
   volatile USB_FFBReport_PIDBlockLoad_Feature_Data_t pidBlockLoad;
   volatile USB_FFBReport_PIDPool_Feature_Data_t pidPoolReport;
   volatile USB_FFBReport_DeviceGain_Output_Data_t deviceGain;
-
+  bool FFB_Active;
   //ffb state structures
   uint8_t GetNextFreeEffect (void);
   void StartEffect (uint8_t id);
