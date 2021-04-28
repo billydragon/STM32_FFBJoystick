@@ -212,22 +212,17 @@ void PIDReportHandler::SetEnvelope (USB_FFBReport_SetEnvelope_Output_Data_t *dat
 void PIDReportHandler::SetCondition (USB_FFBReport_SetCondition_Output_Data_t *data, volatile TEffectState *effect)
 {
   uint8_t axis = data->parameterBlockOffset;
+  effect->axesIdx = (data->parameterBlockOffset + 1 > effect->axesIdx) ? (data->parameterBlockOffset + 1) : (effect->axesIdx);
   effect->conditions[axis].cpOffset = data->cpOffset;
   effect->conditions[axis].positiveCoefficient = data->positiveCoefficient;
   effect->conditions[axis].negativeCoefficient = data->negativeCoefficient;
   effect->conditions[axis].positiveSaturation = data->positiveSaturation;
   effect->conditions[axis].negativeSaturation = data->negativeSaturation;
   effect->conditions[axis].deadBand = data->deadBand;
-  effect->axesIdx = (axis + 1 > effect->axesIdx) ? (axis + 1) : (effect->axesIdx);
+  //effect->axesIdx = (axis + 1 > effect->axesIdx) ? (axis + 1) : (effect->axesIdx);
+
   effect->conditionBlocksCount++;
-  /*
-  if(effect->conditions[axis].positiveSaturation == 0){
-  		effect->conditions[axis].positiveSaturation = 10000;
-  	}
-  	if(effect->conditions[axis].negativeSaturation == 0){
-  		effect->conditions[axis].negativeSaturation = 10000;
-  	}
-  	*/
+
 }
 
 void PIDReportHandler::SetPeriodic (USB_FFBReport_SetPeriodic_Output_Data_t *data, volatile TEffectState *effect)

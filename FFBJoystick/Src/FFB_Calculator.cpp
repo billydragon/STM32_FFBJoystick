@@ -12,9 +12,11 @@
 #include "FFBConfig.h"
 #include "QEncoder.h"
 #include "BiQuad.h"
+#include <math.h>
 
-#define FRICTION_SATURATION 10000
-#define INERTIA_SATURATION 10000
+#ifndef M_PI
+#define M_PI        3.14159265358979323846264338327950288
+#endif
 
 extern PIDReportHandler pidReportHandler;
 float damper_f = 50 , damper_q = 0.2;
@@ -52,23 +54,6 @@ void setDamperFilter(int ax);
 void setInertiaFilter(int ax);
 void setFrictionFilter(int ax);
 
-/*
-void setFilterParameter()
-{
-
-	damperFilter.setCutoffFreqHZ(config.SysConfig.Filter_Parameter.Damper_CF_Freq, true);
-	damperFilter.setSamplingTime(config.SysConfig.Filter_Parameter.Damper_SamplingTime, true);
-
-	inertiaFilter.setCutoffFreqHZ(config.SysConfig.Filter_Parameter.Inertia_CF_Freq, true);
-	inertiaFilter.setSamplingTime(config.SysConfig.Filter_Parameter.Inertia_SamplingTime, true);
-
-	frictionFilter.setCutoffFreqHZ(config.SysConfig.Filter_Parameter.Friction_CF_Freq, true);
-	frictionFilter.setSamplingTime(config.SysConfig.Filter_Parameter.Friction_SamplingTime, true);
-	constantFilter.setCutoffFreqHZ(config.SysConfig.Filter_Parameter.Constant_CF_Freq, true);
-	constantFilter.setSamplingTime(config.SysConfig.Filter_Parameter.Constant_SamplingTime,true);
-
-}
-*/
 
 void InitBiquadLp()
 {
@@ -242,6 +227,8 @@ void forceCalculator (int32_t *forces)
 
 }
 
+
+
 int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParams _effect_params, uint8_t axis)
 {
 
@@ -255,20 +242,32 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
 		  // If the Direction Enable flag is set, only one Condition Parameter Block is defined
 		  if (effect.conditionBlocksCount > 1) {
 				  condition = axis;
-			 }
+			  }
     }
   else
     {
-      direction = axis == 0 ? effect.directionX : effect.directionY;
+	   if(axis == 0)
+	   	direction = effect.directionX;
+	   else
+	   	direction = effect.directionY;
+
       condition = axis;
     }
 
-  bool rotateConditionForce = (FFB_AXIS_COUNT > 1 && effect.conditionBlocksCount == 1);
+  bool rotateConditionForce = ((effect.axesIdx > 1) && (effect.conditionBlocksCount < effect.axesIdx));
   //bool rotateConditionForce = (FFB_AXIS_COUNT > 1 && effect.conditionBlocksCount < FFB_AXIS_COUNT);
   //float angle = ((float)direction * 360.0 / 35999.0) * DEG_TO_RAD;
-  float angle = ((float)direction * (2*PI) / 36000.0f) * DEG_TO_RAD;
-  float angle_ratio = axis == 0 ? sin (angle) : -1 * cos (angle);
-  angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
+  float angle = ((float)direction * 2 * M_PI/ 36000.0f);
+  float angle_ratio = 0;
+  if(axis == 0)
+  {
+	  angle_ratio = sin((float)angle);
+  }
+else
+  {
+	  angle_ratio = -1 * cos((float)angle);
+  }
+  //angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
 
   int32_t force = 0;
   float metric =0;
@@ -306,6 +305,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
 
     case USB_EFFECT_SPRING://8
    			metric = _effect_params.springPosition;
+   			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
    			force = ConditionForceCalculator(effect, metric, 0.0006f, condition) * angle_ratio * _gains.springGain;
    			//printf("Spring: metric: %f, force: %ld \n", metric, force);
    		break;
@@ -313,6 +313,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
 
    			setDamperFilter(axis);
    			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.25f;	//.0625f;
+   			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
    		   force = ConditionForceCalculator(effect, metric, 0.80f , condition) * angle_ratio * _gains.damperGain;
    		   //printf("Damper: metric: %f, force: %ld\n", metric, force);
    		break;
@@ -320,6 +321,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
 
    			setInertiaFilter(axis);
    			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration * 4.0f);
+   			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
    			force = ConditionForceCalculator(effect, metric,0.40f, condition) * angle_ratio * _gains.inertiaGain;
    			//printf("Inertia: metric: %f, force: %ld\n", metric, force);
    		break;
@@ -327,6 +329,7 @@ int32_t getEffectForce (volatile TEffectState &effect, Gains _gains, EffectParam
 
    			setFrictionFilter(axis);
    			metric = FrictionFilterLp[axis]->process(_effect_params.frictionPositionChange) * 0.25f;	//.25;
+   			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
    			force = ConditionForceCalculator(effect, metric , 0.80f, condition) * angle_ratio * _gains.frictionGain;
    			//printf("Friction: metric: %f, force: %ld\n", metric, force);
    			break;
@@ -411,15 +414,16 @@ int32_t SquareForceCalculator (volatile TEffectState &effect)
 
 #endif
 
+#if(1)
 int32_t SinForceCalculator (volatile TEffectState &effect)
 {
-  float offset = effect.offset;
-  float magnitude = effect.magnitude;
-  float phase = effect.phase;
-  float timeTemp = effect.elapsedTime;
-  float period = effect.period;
-  float angle = ((timeTemp / period) + (phase / 35999) * period) * 2 * PI;
-  float sine = sin (angle);
+  float offset = (float)effect.offset;
+  float magnitude = (float)effect.magnitude;
+  float phase = (float)effect.phase;
+  float timeTemp = (float)effect.elapsedTime;
+  float period = (float)effect.period;
+  float angle = ((timeTemp / period) + (phase / 35999) * period) * 2 * M_PI;
+  float sine = sin(angle);
   float tempforce = sine * magnitude;
   tempforce += offset;
   if(effect.useEnvelope)
@@ -428,6 +432,26 @@ int32_t SinForceCalculator (volatile TEffectState &effect)
     }
     return tempforce;
 }
+
+#else
+int32_t SinForceCalculator (volatile TEffectState &effect)
+{
+	uint32_t t = HAL_GetTick() - effect.startTime;
+	float freq = 1.0f / (float)(max(effect.period, 2));
+	float phase = (float)effect.phase / (float)35999; //degrees
+	float sine = sin(2.0 * (float) M_PI * (t * freq + phase)) * effect.magnitude;
+	float tempforce = (int32_t)(effect.offset + sine);
+	if(effect.useEnvelope)
+	    {
+	  	  tempforce = ApplyEnvelope (effect, tempforce);
+	    }
+	    return tempforce;
+
+}
+
+#endif
+
+
 
 int32_t TriangleForceCalculator (volatile TEffectState &effect)
 {
@@ -512,7 +536,7 @@ int32_t SawtoothUpForceCalculator (volatile TEffectState &effect)
 
 
 
-
+#if(0)
 int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, float scale, uint8_t axis)
 {
   float deadBand;
@@ -564,7 +588,55 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
 
   return (int32_t) tempForce;
 }
+#else
+int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, float scale, uint8_t axis)
+{
 
+		float tempForce = 0;
+
+		if (effect.axesIdx > 1)
+		{
+
+				if (metric < (effect.conditions[axis].cpOffset - effect.conditions[axis].deadBand))
+				{
+						tempForce = (metric -  (effect.conditions[axis].cpOffset - effect.conditions[axis].deadBand)) * effect.conditions[axis].negativeCoefficient * scale;
+						tempForce = constrain(tempForce,-effect.conditions[axis].negativeSaturation,effect.conditions[axis].positiveSaturation);
+				}
+				else if (metric > (effect.conditions[axis].cpOffset + effect.conditions[axis].deadBand))
+				{
+						tempForce = (metric -  (effect.conditions[axis].cpOffset + effect.conditions[axis].deadBand)) * effect.conditions[axis].positiveCoefficient * scale;
+						tempForce = constrain(tempForce,-effect.conditions[axis].negativeSaturation,effect.conditions[axis].positiveSaturation);
+				}
+
+		}
+
+	   if (effect.axesIdx == 1)
+	   {
+
+				if (metric < (effect.conditions[0].cpOffset - effect.conditions[0].deadBand))
+				{
+
+						tempForce = (metric -  (effect.conditions[0].cpOffset - effect.conditions[0].deadBand)) * effect.conditions[0].negativeCoefficient * scale;
+						tempForce = constrain(tempForce,-effect.conditions[0].negativeSaturation,effect.conditions[0].positiveSaturation);
+
+				}
+				else if (metric > (effect.conditions[0].cpOffset + effect.conditions[0].deadBand))
+				{
+						tempForce = (metric -  (effect.conditions[0].cpOffset + effect.conditions[0].deadBand)) * effect.conditions[0].positiveCoefficient * scale;
+						tempForce = constrain(tempForce,-effect.conditions[0].negativeSaturation,effect.conditions[0].positiveSaturation);
+				}
+
+	   }
+
+
+		tempForce = -tempForce * (1 + effect.gain) / 10000;
+
+		encoder.Update_Metric(axis);
+
+		return (int32_t) tempForce;
+
+}
+#endif
 
 
 int32_t ApplyGain (uint16_t value, uint16_t gain)
