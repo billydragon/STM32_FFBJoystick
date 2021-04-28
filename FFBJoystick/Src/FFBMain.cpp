@@ -359,9 +359,18 @@ void AutoCalibration(uint8_t idx)
 float AutoCenter_spring(uint8_t ax)
 {
 
+	float tempforce = 0;
+	int32_t deadband = config.SysConfig.AC_MotorSettings[ax].Dead_Zone;
 	float Coefficient = 10000;
 	encoder.Update_Metric(ax);
-	float tempforce = encoder.axis[ax].current_Position * Coefficient * 0.0004f * gain[ax].springGain/255;
+	if(encoder.axis[ax].current_Position < -deadband)
+	{
+		tempforce = (encoder.axis[ax].current_Position + deadband) * Coefficient * 0.0004f * gain[ax].springGain/255;
+	}
+	else if(encoder.axis[ax].current_Position > deadband)
+	{
+		tempforce = (encoder.axis[ax].current_Position - deadband) * Coefficient * 0.0004f * gain[ax].springGain/255;
+	}
 	tempforce += encoder.axis[ax].current_Acceleration * Coefficient * 0.01f * gain[ax].damperGain /255;
 	tempforce = -constrain(tempforce, -32767, 32767);
 	return tempforce;
