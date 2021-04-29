@@ -107,7 +107,6 @@ typedef struct //PID state
   void start_joystick(void);
   void Set_Gains(void);
   void SetEffects(void);
-  void CalculateMaxSpeedAndMaxAcceleration(int ax);
   void Set_PID_Turnings();
   void AutoCalibration(uint8_t idx);
   void gotoPosition(int axis_num, int32_t targetPosition);

@@ -107,7 +107,7 @@ typedef struct //FFB: Set Effect Output Report
   uint16_t duration; // 0..32767 ms
   uint16_t triggerRepeatInterval; // 0..32767 ms
   uint16_t samplePeriod;	// 0..32767 ms
-  uint16_t gain;	// 0..255	 (physical 0..10000)
+  uint16_t gain;	// 	 (physical 0..10000)
   uint8_t triggerButton;	// button ID (0..8)
   uint8_t enableAxis; // bits: 0=X, 1=Y, 2=DirectionEnable
   uint16_t directionX;	// angle (0=0 .. 35999=360deg)

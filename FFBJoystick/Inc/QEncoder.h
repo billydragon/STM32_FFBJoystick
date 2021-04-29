@@ -45,6 +45,7 @@ extern "C"
     void timerElapsed (TIM_HandleTypeDef *htim);
     void updatePosition (uint8_t axis);
     void Update_Metric(uint32_t idx);
+    void Update_Metric_By_Time(uint32_t idx);
   private:
     void Check_Axis_XY_Invert_Change ();
 

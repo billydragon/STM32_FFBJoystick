@@ -214,12 +214,12 @@ void forceCalculator (int32_t *forces)
 				}
 			  pidReportHandler.FFB_Active = true;
     	  }
-			//printf("Force_X: %ld, Force_Y: %ld \n", forces[0], forces[1]);
+			//printf("FX: %ld, FY: %ld \n", forces[0], forces[1]);
 
     }
 
-  forces[0] = (int32_t) ((float) 1.00 * forces[0] * m_gains[0].totalGain / 255);
-  forces[1] = (int32_t) ((float) 1.00 * forces[1] * m_gains[1].totalGain / 255);
+  forces[0] = (int32_t) ((float) 1.00 * forces[0] * m_gains[0].totalGain / 100);
+  forces[1] = (int32_t) ((float) 1.00 * forces[1] * m_gains[1].totalGain / 100);
 
   forces[0] = constrain(forces[0], -32767, 32767);		//16 bits
   forces[1] = constrain(forces[1], -32767, 32767);
@@ -275,7 +275,7 @@ else
   switch (effect.effectType)
     {
     case USB_EFFECT_CONSTANT: //1
-    		force = -1.5 * ConstantForceCalculator (effect) * angle_ratio * _gains.constantGain;
+    		force = -1.1 * ConstantForceCalculator (effect) * angle_ratio * _gains.constantGain;
 
     		setConstantFilter(axis);
     		if (cfFilter_f < calcfrequency / 2)
@@ -302,43 +302,88 @@ else
     case USB_EFFECT_SAWTOOTHUP: //7
     		force = -1.0 * SawtoothUpForceCalculator (effect) * angle_ratio * _gains.sawtoothupGain;
       break;
-
+#if(1)
     case USB_EFFECT_SPRING://8
    			metric = _effect_params.springPosition;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   			force = ConditionForceCalculator(effect, metric, 0.0006f, condition) * angle_ratio * _gains.springGain;
-   			//printf("Spring: metric: %f, force: %ld \n", metric, force);
+   			force = ConditionForceCalculator(effect, metric, 0.00025f, condition) * angle_ratio * _gains.springGain;
+   			//printf("Spring: M: %f, F: %ld \n", metric, force);
    		break;
    	case USB_EFFECT_DAMPER://9
 
    			setDamperFilter(axis);
-   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.25f;	//.0625f;
+   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.50f;	//.0625f;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   		   force = ConditionForceCalculator(effect, metric, 0.80f , condition) * angle_ratio * _gains.damperGain;
-   		   //printf("Damper: metric: %f, force: %ld\n", metric, force);
+   		   force = ConditionForceCalculator(effect, metric, 0.6f , condition) * angle_ratio * _gains.damperGain;
+
+   		   //printf("Damper: M: %f, F: %ld\n", metric, force);
    		break;
    	case USB_EFFECT_INERTIA://10
 
    			setInertiaFilter(axis);
-   			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration * 4.0f);
+   			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration) * 2.00f;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   			force = ConditionForceCalculator(effect, metric,0.40f, condition) * angle_ratio * _gains.inertiaGain;
-   			//printf("Inertia: metric: %f, force: %ld\n", metric, force);
+   			if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
+   			{
+   				force = ConditionForceCalculator(effect, abs(metric), 1.0f, condition) * angle_ratio * _gains.inertiaGain;
+   			}
+   			else if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange > 0)
+   			{
+					force = -1 * ConditionForceCalculator(effect, abs(metric), 1.0f, condition) * angle_ratio * _gains.inertiaGain;
+				}
+
+   			//printf("Inertia: M: %f, F: %ld\n", metric, force);
    		break;
    	case USB_EFFECT_FRICTION://11
 
    			setFrictionFilter(axis);
    			metric = FrictionFilterLp[axis]->process(_effect_params.frictionPositionChange) * 0.25f;	//.25;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   			force = ConditionForceCalculator(effect, metric , 0.80f, condition) * angle_ratio * _gains.frictionGain;
-   			//printf("Friction: metric: %f, force: %ld\n", metric, force);
+   			force = ConditionForceCalculator(effect, metric , 0.35f, condition) * angle_ratio * _gains.frictionGain;
+   			//printf("Friction: M: %f, F: %ld\n", metric, force);
    			break;
+#else
+   	case USB_EFFECT_SPRING://8
+   	   			metric = NormalizeRange(_effect_params.springPosition,_effect_params.springMaxPosition) ;
+   	   			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
+   	   			force = ConditionForceCalculator(effect, metric, 1.0f, condition) * angle_ratio * _gains.springGain;
+   	   			//printf("Spring: M: %f, F: %ld \n", metric, force);
+   	   		break;
+   	   	case USB_EFFECT_DAMPER://9
 
-    case USB_EFFECT_CUSTOM: //12
-      break;
+   	   			setDamperFilter(axis);
+   	   			metric = DamperFilterLp[axis]->process(NormalizeRange(_effect_params.damperVelocity * 5,_effect_params.damperMaxVelocity));	//.0625f;
+   	   			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
+   	   		   force = ConditionForceCalculator(effect, metric, 1.0f , condition) * angle_ratio * _gains.damperGain;
+   	   		   //printf("Damper: M: %f, F: %ld\n", metric, force);
+   	   		break;
+   	   	case USB_EFFECT_INERTIA://10
+
+   	   			setInertiaFilter(axis);
+   	   			metric = InertiaFilterLp[axis]->process(NormalizeRange(_effect_params.inertiaAcceleration * 5,_effect_params.inertiaMaxAcceleration));
+   	   			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
+   	   			force = ConditionForceCalculator(effect, metric,1.0f, condition) * angle_ratio * _gains.inertiaGain;
+   	   			//printf("Inertia: M: %f, F: %ld\n", metric, force);
+   	   		break;
+   	   	case USB_EFFECT_FRICTION://11
+
+   	   			setFrictionFilter(axis);
+   	   			metric = FrictionFilterLp[axis]->process( NormalizeRange(_effect_params.frictionPositionChange * 5,_effect_params.frictionMaxPositionChange));	//.25;
+   	   			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
+   	   			force = ConditionForceCalculator(effect, metric , 1.0f, condition) * angle_ratio * _gains.frictionGain;
+   	   			//printf("Friction: M: %f, F: %ld\n", metric, force);
+   	   			break;
+
+#endif
+			 case USB_EFFECT_CUSTOM: //12
+				break;
+			 default:
+				 break;
     }
+
   effect.elapsedTime = (uint64_t) HAL_GetTick () - effect.startTime;
-  return (force / 255); //Apply Users Gain
+  force /=255;
+  return (constrain(force,-10000,10000)); //Apply Users Gain
 }
 
 
@@ -360,7 +405,7 @@ int32_t RampForceCalculator (volatile TEffectState &effect)
 {
 	uint32_t duration = effect.duration;
   int32_t tempforce = effect.startMagnitude + effect.elapsedTime * (effect.endMagnitude - effect.startMagnitude)/ duration;
-  tempforce *= (int32_t)(1 + effect.gain) /10000;
+  tempforce = tempforce * (int32_t)(1 + effect.gain) /10000;
 
   if(effect.useEnvelope)
     {
@@ -394,6 +439,7 @@ int32_t SquareForceCalculator (volatile TEffectState &effect)
     {
   	  tempforce = ApplyEnvelope (effect, tempforce);
     }
+
     return tempforce;
 }
 
@@ -439,7 +485,7 @@ int32_t SinForceCalculator (volatile TEffectState &effect)
 	uint32_t t = HAL_GetTick() - effect.startTime;
 	float freq = 1.0f / (float)(max(effect.period, 2));
 	float phase = (float)effect.phase / (float)35999; //degrees
-	float sine = sin(2.0 * (float) M_PI * (t * freq + phase)) * effect.magnitude;
+	float sine = sinf(2.0 * (float) M_PI * (t * freq + phase)) * effect.magnitude;
 	float tempforce = (int32_t)(effect.offset + sine);
 	if(effect.useEnvelope)
 	    {
@@ -536,7 +582,7 @@ int32_t SawtoothUpForceCalculator (volatile TEffectState &effect)
 
 
 
-#if(0)
+#if(1)
 int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, float scale, uint8_t axis)
 {
   float deadBand;
@@ -555,39 +601,42 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
 
   float tempForce = 0;
 
+# if(0)
   if (metric < (cpOffset - deadBand))
     {
 
-# if(0)
-	  tempForce = (metric -  (float)1.0f*(cpOffset - deadBand)/10000) * negativeCoefficient * scale ;
-	  tempForce = (tempForce < -negativeSaturation ? -negativeSaturation : tempForce);
-
-#else
-	  tempForce = (metric -  (cpOffset - deadBand)) * negativeCoefficient * scale;
-	  tempForce = constrain(tempForce,-negativeSaturation,positiveSaturation);
-#endif
-
+		  tempForce = (metric -  (float)1.0f*(cpOffset - deadBand)/10000) * negativeCoefficient * scale ;
+		  tempForce = (tempForce < -negativeSaturation ? -negativeSaturation : tempForce);
     }
-  else if (metric > (cpOffset + deadBand))
+    else if (metric > (cpOffset + deadBand))
     {
-#if(0)
-		  tempForce = (metric - (float)1.0f*(cpOffset + deadBand)/10000) * positiveCoefficient * scale;
-		  tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
+   	  tempForce = (metric - (float)1.0f*(cpOffset + deadBand)/10000) * positiveCoefficient * scale;
+   	  tempForce = (tempForce > positiveSaturation ? positiveSaturation : tempForce);
+    }
+    else return 0;
 
 #else
-		  tempForce = (metric -  (cpOffset + deadBand)) * positiveCoefficient * scale;
-		  tempForce = constrain(tempForce,-negativeSaturation,positiveSaturation);
-#endif
-
-    }
+	  if (metric < (cpOffset - deadBand))
+	      {
+				  tempForce = (metric -  (cpOffset - deadBand)) * negativeCoefficient * scale;
+				  tempForce = constrain(tempForce,-negativeSaturation,positiveSaturation);
+	      }
+	  else if (metric > (cpOffset + deadBand))
+	      {
+				  tempForce = (metric -  (cpOffset + deadBand)) * positiveCoefficient * scale;
+		  		  tempForce = constrain(tempForce,-negativeSaturation,positiveSaturation);
+	      }
 	  else return 0;
+#endif
 
 	  tempForce = -tempForce * (1 + effect.gain) / 10000;
 
-	  encoder.Update_Metric(axis);
+	  //encoder.Update_Metric(axis);
+	  encoder.Update_Metric_By_Time(axis);
 
   return (int32_t) tempForce;
 }
+
 #else
 int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, float scale, uint8_t axis)
 {
@@ -631,8 +680,8 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
 
 		tempForce = -tempForce * (1 + effect.gain) / 10000;
 
-		encoder.Update_Metric(axis);
-
+		//encoder.Update_Metric(axis);
+		encoder.Update_Metric_By_Time(axis);
 		return (int32_t) tempForce;
 
 }

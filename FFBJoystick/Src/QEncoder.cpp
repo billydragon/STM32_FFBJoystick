@@ -195,6 +195,31 @@ void QEncoder::Update_Metric(uint32_t idx) //Test
 
 }
 
+void QEncoder::Update_Metric_By_Time(uint32_t ax)
+{
+
+			uint32_t currentEncoderTime = HAL_GetTick();
+		   axis[ax].position_Changed = axis[ax].current_Position - axis[ax].last_Position;
+
+		  int32_t diffTime = (int16_t)(currentEncoderTime - axis[ax].last_EncoderTime) ;
+		  if (diffTime > 0) {
+			 axis[ax].current_Speed = axis[ax].position_Changed / diffTime;
+			 axis[ax].current_Acceleration = (abs(axis[ax].current_Speed) - abs(axis[ax].last_Speed))/diffTime;
+			 axis[ax].last_EncoderTime = currentEncoderTime;
+			 axis[ax].last_Speed = axis[ax].current_Speed;
+		  }
+		  axis[ax].last_Position = axis[ax].last_Position;
+
+		  if (axis[ax].max_Speed < abs(axis[ax].current_Speed))
+		    {
+		      axis[ax].max_Speed = abs(axis[ax].current_Speed);
+		    }
+
+		  if (axis[ax].max_Acceleration < abs(axis[ax].current_Acceleration))
+		    {
+		      axis[ax].max_Acceleration = abs(axis[ax].current_Acceleration);
+		    }
+}
 
 
 

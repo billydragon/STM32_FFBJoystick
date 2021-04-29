@@ -274,7 +274,6 @@ void start_joystick ()
     }
 
 	Motors.SetMotorOutput(xy_forces);
-
 	Send_Debug_Report();
 
 }
@@ -310,21 +309,31 @@ void SetEffects() //Test
 
 	for (int ax = 0; ax <2; ax++)
 	{
-
-		 effects[ax].springPosition = encoder.axis[ax].current_Position;
-		 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
-		 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed; //lastX - posX;
-		 effects[ax].frictionMaxPositionChange = encoder.axis[ax].maxValue;
-		 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration;
-		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].maxValue;
-		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
-		 effects[ax].damperMaxVelocity = encoder.axis[ax].maxValue;
-
+#if(0)	//Activate for calculate FFB by Encoder Position
+				 effects[ax].springPosition = encoder.axis[ax].current_Position;
+				 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
+				 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed; //lastX - posX;
+				 effects[ax].frictionMaxPositionChange = encoder.axis[ax].maxValue;
+				 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration;
+				 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].maxValue;
+				 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
+				 effects[ax].damperMaxVelocity = encoder.axis[ax].maxValue;
+#else		//Active for calculate FFB by Time
+			    effects[ax].springPosition = encoder.axis[ax].current_Position;
+		 		 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
+		 		 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed; //lastX - posX;
+		 		 effects[ax].frictionMaxPositionChange = encoder.axis[ax].maxValue;
+		 		 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration;
+		 		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].max_Acceleration;
+		 		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
+		 		 effects[ax].damperMaxVelocity = encoder.axis[ax].max_Speed;
+#endif
 
 	}
 
 	setEffectParams (effects);
 }
+
 
 
 void Set_Gains ()
@@ -362,7 +371,7 @@ float AutoCenter_spring(uint8_t ax)
 	float tempforce = 0;
 	int32_t deadband = config.SysConfig.AC_MotorSettings[ax].Dead_Zone;
 	float Coefficient = 10000;
-	encoder.Update_Metric(ax);
+	encoder.Update_Metric_By_Time(ax);
 	if(encoder.axis[ax].current_Position < -deadband)
 	{
 		tempforce = (encoder.axis[ax].current_Position + deadband) * Coefficient * 0.0004f * gain[ax].springGain/255;
@@ -371,7 +380,7 @@ float AutoCenter_spring(uint8_t ax)
 	{
 		tempforce = (encoder.axis[ax].current_Position - deadband) * Coefficient * 0.0004f * gain[ax].springGain/255;
 	}
-	tempforce += encoder.axis[ax].current_Acceleration * Coefficient * 0.01f * gain[ax].damperGain /255;
+	tempforce += encoder.axis[ax].current_Speed * Coefficient * 0.00020f * gain[ax].damperGain /255;
 	tempforce = -constrain(tempforce, -32767, 32767);
 	return tempforce;
 }
