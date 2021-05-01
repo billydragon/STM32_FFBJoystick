@@ -231,52 +231,52 @@ static int8_t USB_HID_SetFeature (uint16_t event_idx, uint8_t *buffer, uint16_t 
 
   if (report_type == DYNAMIC_HID_REPORT_TYPE_FEATURE)
     {
-
       if (wIndex == 0)
-	{
-	  if (report_id == 5)
-	    {
+      {
+		  if (report_id == 5)
+			 {
 
-	      USB_FFBReport_CreateNewEffect_Feature_Data_t ans;
-	      memcpy (&ans, (USB_FFBReport_CreateNewEffect_Feature_Data_t*) buffer,
-		      sizeof(USB_FFBReport_CreateNewEffect_Feature_Data_t));
-	      CreatNewEffect (&ans);
+				USB_FFBReport_CreateNewEffect_Feature_Data_t ans;
+				memcpy (&ans, (USB_FFBReport_CreateNewEffect_Feature_Data_t*) buffer,
+					sizeof(USB_FFBReport_CreateNewEffect_Feature_Data_t));
+				CreatNewEffect (&ans);
 
-	      return (USBD_OK);
-	    }
+				return (USBD_OK);
+			 }
+      }
 
-	}
+		if (wIndex == 1)
+		{
+		  if (report_id == 0)
+			 {
 
-      if (wIndex == 1)
-	{
-	  if (report_id == 0)
-	    {
+				HostToDevSetFeature (buffer, wLenght);
+				return (USBD_OK);
 
-	      HostToDevSetFeature (buffer, wLenght);
-	      return (USBD_OK);
+			 }
 
-	    }
-
-	}
+		}
     }
-  if (report_type == DYNAMIC_HID_REPORT_TYPE_OUTPUT)
-    {
 
-      return (USBD_OK);
-    }
+	if (report_type == DYNAMIC_HID_REPORT_TYPE_OUTPUT)
+	{
+
+		return (USBD_OK);
+	}
 
   if (report_type == DYNAMIC_HID_REPORT_TYPE_INPUT)
     {
-      if (wIndex == 0)
-	{
+			if (wIndex == 0)
+			{
 
-	  return (USBD_OK);
-	}
-      if (wIndex == 1)
-	{
+				return (USBD_OK);
+			}
 
-	  return (USBD_OK);
-	}
+			if (wIndex == 1)
+			{
+
+				return (USBD_OK);
+			}
 
     }
   return (USBD_FAIL);
@@ -293,83 +293,96 @@ static int8_t USB_HID_GetFeature (uint16_t event_idx, uint16_t wIndex, uint8_t *
 
   if (report_type == DYNAMIC_HID_REPORT_TYPE_INPUT)
     {
-      if (wIndex == 0)
-	{
-	  if (report_id == 2)
-	    {
+			if (wIndex == 0)
+			{
+			  if (report_id == 2)
+				 {
 
-	      uint8_t *pGetFeatureData = GetPIDStatus ();
-	      uint16_t GetFeatureDataSize = sizeof(USB_FFBReport_PIDStatus_Input_Data_t);
-	      memcpy (buffer, pGetFeatureData, GetFeatureDataSize);
-	      *length = GetFeatureDataSize;
+					uint8_t *pGetFeatureData = GetPIDStatus ();
+					uint16_t GetFeatureDataSize = sizeof(USB_FFBReport_PIDStatus_Input_Data_t);
+					memcpy (buffer, pGetFeatureData, GetFeatureDataSize);
+					*length = GetFeatureDataSize;
 
-	      return (USBD_OK);
+					return (USBD_OK);
 
-	    }
+				 }
 
-	}
+			}
 
-      if (wIndex == 1)
-	{
-	  return (USBD_OK);
-	}
+			if (wIndex == 1)
+			{
+					return (USBD_OK);
+			}
 
     }
 
   if (report_type == DYNAMIC_HID_REPORT_TYPE_OUTPUT)
     {
+		  if (wIndex == 0)
+			{
+				  if (report_id == 2)
+					 {
 
+						uint8_t *pGetFeatureData = GetPIDStatus ();
+						uint16_t GetFeatureDataSize = sizeof(USB_FFBReport_PIDStatus_Input_Data_t);
+						memcpy (buffer, pGetFeatureData, GetFeatureDataSize);
+						*length = GetFeatureDataSize;
+
+						return (USBD_OK);
+
+					 }
+			}
     }
 
   if (report_type == DYNAMIC_HID_REPORT_TYPE_FEATURE)
     {
       if (wIndex == 0)
-	{
+      {
 
-	  if ((report_id == 6) || (report_id == 0x12))// && (gNewEffectBlockLoad.reportId==6))
-	    {
+			  if ((report_id == 6) || (report_id == 0x12))// && (gNewEffectBlockLoad.reportId==6))
+				 {
 
-	    uint16_t GetFeatureDataSize = sizeof(USB_FFBReport_PIDBlockLoad_Feature_Data_t);
-	    uint8_t *pGetFeatureData = GetPIDBlockLoad ();
-	      memcpy (buffer, pGetFeatureData, GetFeatureDataSize);
-	      *length = GetFeatureDataSize;
+				 uint16_t GetFeatureDataSize = sizeof(USB_FFBReport_PIDBlockLoad_Feature_Data_t);
+				 uint8_t *pGetFeatureData = GetPIDBlockLoad ();
+					memcpy (buffer, pGetFeatureData, GetFeatureDataSize);
+					*length = GetFeatureDataSize;
 
-	      return (USBD_OK);
-	    }
+					return (USBD_OK);
+				 }
 
-	  if ((report_id == 7) || (report_id == 0x13))
-	    {
+			  if ((report_id == 7) || (report_id == 0x13))
+				 {
 
-	      USB_FFBReport_PIDPool_Feature_Data_t ans;
-	      ans.reportId = report_id;
-	      ans.ramPoolSize = 0xffff;
-	      ans.maxSimultaneousEffects = MAX_EFFECTS;
-	      ans.memoryManagement = 3;
-	      uint16_t GetFeatureDataSize = sizeof(USB_FFBReport_PIDBlockLoad_Feature_Data_t);
-	      *length = GetFeatureDataSize;
-	      memcpy (buffer, &ans, GetFeatureDataSize);
+					USB_FFBReport_PIDPool_Feature_Data_t ans;
+					ans.reportId = report_id;
+					ans.ramPoolSize = 0xffff;
+					ans.maxSimultaneousEffects = MAX_EFFECTS;
+					ans.memoryManagement = 3;
+					uint16_t GetFeatureDataSize = sizeof(USB_FFBReport_PIDBlockLoad_Feature_Data_t);
+					*length = GetFeatureDataSize;
+					memcpy (buffer, &ans, GetFeatureDataSize);
 
-	      return (USBD_OK);
-	    }
+					return (USBD_OK);
+				 }
 
-	}
+      }
       if (wIndex == 1)
       {
 
-		 uint8_t *pGetFeatureData = Get_SysConfig();
-		 uint16_t GetFeatureDataSize = sizeof(SYS_CONFIG_t);
-		  //buffer[0] = 0;
-		  uint16_t offset = 0;
-		  while (offset < GetFeatureDataSize)
-			{
-			  uint16_t bufferLength =
-			  (GetFeatureDataSize - offset) > HID_FEATURE_LENGTH ? HID_FEATURE_LENGTH : (GetFeatureDataSize - offset);
-			  memcpy (&buffer[0], &pGetFeatureData[offset], bufferLength);
-			  offset += bufferLength == HID_FEATURE_LENGTH ? bufferLength - 1 : bufferLength;
-			  *length = bufferLength ;
-			  return (USBD_OK);
-	    }
-	}
+			 uint8_t *pGetFeatureData = Get_SysConfig();
+			 uint16_t GetFeatureDataSize = sizeof(SYS_CONFIG_t);
+			  //buffer[0] = 0;
+			  uint16_t offset = 0;
+			  while (offset < GetFeatureDataSize)
+				{
+					  uint16_t bufferLength =
+					  (GetFeatureDataSize - offset) > HID_FEATURE_LENGTH ? HID_FEATURE_LENGTH : (GetFeatureDataSize - offset);
+					  memcpy (&buffer[0], &pGetFeatureData[offset], bufferLength);
+					  offset += bufferLength == HID_FEATURE_LENGTH ? bufferLength - 1 : bufferLength;
+					  *length = bufferLength ;
+					  return (USBD_OK);
+				}
+      }
 
     }
   return (USBD_FAIL);

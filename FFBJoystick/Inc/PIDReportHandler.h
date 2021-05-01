@@ -54,7 +54,7 @@ public:
   void SetPeriodic (USB_FFBReport_SetPeriodic_Output_Data_t *data, volatile TEffectState *effect);
   void SetConstantForce (USB_FFBReport_SetConstantForce_Output_Data_t *data, volatile TEffectState *effect);
   void SetRampForce (USB_FFBReport_SetRampForce_Output_Data_t *data, volatile TEffectState *effect);
-
+  void sendStatusReport(uint8_t effectID);
   // Handle incoming data from USB
   void CreateNewEffect (USB_FFBReport_CreateNewEffect_Feature_Data_t *inData);
   void UppackUsbData (uint8_t *data, uint16_t len);

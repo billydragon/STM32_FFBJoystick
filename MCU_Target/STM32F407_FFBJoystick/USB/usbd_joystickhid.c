@@ -915,10 +915,10 @@ USBD_JOYSTICK_HID_SendReport (USBD_HandleTypeDef *pdev, uint8_t *report,
   if (pdev->dev_state == USBD_STATE_CONFIGURED)
     {
       if (hhid->JoystickState == HID_IDLE)
-	{
-	  hhid->JoystickState = HID_BUSY;
-	  (void) USBD_LL_Transmit (pdev, JOYSTICK_HID_EPIN_ADDR, report, len);
-	}
+		{
+		  hhid->JoystickState = HID_BUSY;
+		  (void) USBD_LL_Transmit (pdev, JOYSTICK_HID_EPIN_ADDR, report, len);
+		}
       else
 	{
 	  return (uint8_t) USBD_BUSY;

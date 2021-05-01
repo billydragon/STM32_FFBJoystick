@@ -31,6 +31,8 @@
 
 extern USBD_HandleTypeDef hUsbDeviceFS;
 
+uint32_t JoystickReportTime = 0;
+
 Joystick_::Joystick_::Joystick_ (uint8_t hidReportId, uint8_t joystickType,
 				 uint8_t buttonCount, uint8_t hatSwitchCount,
 				 bool includeXAxis, bool includeYAxis,
@@ -460,6 +462,7 @@ Joystick_::Joystick_::Joystick_ (uint8_t hidReportId, uint8_t joystickType,
   _hidReportSize += (_hatSwitchCount > 0);
   _hidReportSize += (axisCount * 2);
   _hidReportSize += (simulationCount * 2);
+  Last_HidReport = new uint8_t[_hidReportSize];
 
   // Initalize Joystick State
   _xAxis = 0;
@@ -681,8 +684,7 @@ int Joystick_::buildAndSetSimulationValue (bool includeValue, int16_t value,
 
 void Joystick_::sendState ()
 {
-  uint8_t data[_hidReportSize] =
-    { 0 };
+  uint8_t data[_hidReportSize] = { 0 };
   int index = 0;
 
   // Load Button State
@@ -735,10 +737,29 @@ void Joystick_::sendState ()
   uint8_t _report[_hidReportSize + 1];
   _report[0] = _hidReportId;
   memcpy (&_report[1], data, _hidReportSize);
-  int8_t result = USBD_JOYSTICK_HID_SendReport_FS ( _report, (uint16_t) _hidReportSize + 1);
-  if (result == USBD_OK)
-    {
 
-    }
+  if(HAL_GetTick() - JoystickReportTime > 5)
+  {
+	  int8_t result = USBD_JOYSTICK_HID_SendReport_FS ( _report, (uint16_t) _hidReportSize + 1);
+	    if (result == USBD_OK)
+	      {
+	   			 JoystickReportTime = HAL_GetTick();
+	      }
+  }
+  else
+  {
+	  uint8_t n = memcmp(data, Last_HidReport,_hidReportSize);
+	 if (n != 0)
+	 {
+		 int8_t result = USBD_JOYSTICK_HID_SendReport_FS ( _report, (uint16_t) _hidReportSize + 1);
+		 if (result == USBD_OK)
+			{
+				 JoystickReportTime = HAL_GetTick();
+			}
+		 memcpy (Last_HidReport, data, _hidReportSize);
+	 }
+
+  }
+
 }
 

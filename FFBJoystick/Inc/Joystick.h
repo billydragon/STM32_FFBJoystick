@@ -105,6 +105,7 @@ private:
 
   uint8_t _hidReportId;
   uint8_t _hidReportSize;
+  uint8_t * Last_HidReport;
 
 protected:
   int buildAndSet16BitValue (bool includeValue, int16_t value, int16_t valueMinimum, int16_t valueMaximum, int16_t actualMinimum, int16_t actualMaximum, uint8_t dataLocation[]);

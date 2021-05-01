@@ -569,6 +569,7 @@ static const uint8_t pidReportDescriptor[]
 		  		0x75,0x08,	// REPORT_SIZE (08)
 		  		0x95,0x01,	// REPORT_COUNT (01)
 		  		0xB1,0x02,	// FEATURE (Data,Var,Abs)
+
 		  		0x09,0x8B,	// USAGE (Block Load Status)
 		  		0xA1,0x02,	// COLLECTION (Logical)
 		  			0x09,0x8C,	// USAGE (Block Load Success)

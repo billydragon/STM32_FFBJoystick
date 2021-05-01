@@ -3,6 +3,8 @@
 #include "main.h"
 #include "FFBMain.h"
 
+extern USBD_HandleTypeDef hUsbDeviceFS;
+
 PIDReportHandler::PIDReportHandler ()
 {
   nextEID = 1;
@@ -116,6 +118,24 @@ void PIDReportHandler::BlockFree (USB_FFBReport_BlockFree_Output_Data_t *data)
     }
 }
 
+void PIDReportHandler::sendStatusReport(uint8_t effectID){
+
+		this->pidState.effectBlockIndex = effectID;
+		this->pidState.status = HID_ACTUATOR_POWER;
+
+		if(this->FFB_Active){
+			this->pidState.status |= HID_ENABLE_ACTUATORS;
+			this->pidState.status |= HID_EFFECT_PLAYING;
+		}else{
+			this->pidState.status |= HID_EFFECT_PAUSE;
+		}
+		if(effectID > 0 && g_EffectStates[effectID-1].state == 1)
+			this->pidState.status |= HID_EFFECT_PLAYING;
+
+	 USBD_JOYSTICK_HID_SendReport_FS ((uint8_t *)&this->pidState, sizeof(USB_FFBReport_PIDStatus_Input_Data_t));
+
+}
+
 void PIDReportHandler::DeviceControl (
     USB_FFBReport_DeviceControl_Output_Data_t *data)
 {
@@ -135,6 +155,7 @@ void PIDReportHandler::DeviceControl (
     case 0x02:
       // disable actuators
       Bset(pidState.status, ACTUATORS_ENABLED);
+
       //printf("Effects: Disabled.\n");
       break;
     case 0x03:
@@ -266,7 +287,9 @@ void PIDReportHandler::CreateNewEffect (USB_FFBReport_CreateNewEffect_Feature_Da
       memset ((void*) effect, 0, sizeof(TEffectState));
       effect->state = MEFFECTSTATE_ALLOCATED;
       pidBlockLoad.ramPoolAvailable -= SIZE_EFFECT;
+      pidState.effectBlockIndex = pidBlockLoad.effectBlockIndex;
     }
+
   //printf("Effects: CreateNewEffect().\n");
 }
 
@@ -323,7 +346,7 @@ void PIDReportHandler::UppackUsbData (uint8_t *data, uint16_t len)
     case 12:
 
       DeviceControl ((USB_FFBReport_DeviceControl_Output_Data_t*) data);
-
+      sendStatusReport(effectId);
       break;
     case 13:
 

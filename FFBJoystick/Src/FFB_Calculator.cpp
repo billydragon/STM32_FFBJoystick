@@ -275,7 +275,7 @@ else
   switch (effect.effectType)
     {
     case USB_EFFECT_CONSTANT: //1
-    		force = -1.1 * ConstantForceCalculator (effect) * angle_ratio * _gains.constantGain;
+    		force = -1.5 * ConstantForceCalculator (effect) * angle_ratio * _gains.constantGain;
 
     		setConstantFilter(axis);
     		if (cfFilter_f < calcfrequency / 2)
@@ -312,7 +312,7 @@ else
    	case USB_EFFECT_DAMPER://9
 
    			setDamperFilter(axis);
-   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.50f;	//.0625f;
+   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.25f;	//.0625f;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
    		   force = ConditionForceCalculator(effect, metric, 0.6f , condition) * angle_ratio * _gains.damperGain;
 
@@ -321,15 +321,15 @@ else
    	case USB_EFFECT_INERTIA://10
 
    			setInertiaFilter(axis);
-   			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration) * 2.00f;
+   			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration) * 4.00f;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   			if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange < 0)
+   			if (_effect_params.inertiaAcceleration > 0 && _effect_params.frictionPositionChange < 0)
    			{
-   				force = ConditionForceCalculator(effect, abs(metric), 1.0f, condition) * angle_ratio * _gains.inertiaGain;
+   				force =  ConditionForceCalculator(effect, abs(metric), 0.50f, condition) * angle_ratio * _gains.inertiaGain;
    			}
-   			else if (_effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange > 0)
+   			else if (_effect_params.inertiaAcceleration > 0 && _effect_params.frictionPositionChange > 0)
    			{
-					force = -1 * ConditionForceCalculator(effect, abs(metric), 1.0f, condition) * angle_ratio * _gains.inertiaGain;
+					force =  -1 *  ConditionForceCalculator(effect, abs(metric), 0.50f, condition) * angle_ratio * _gains.inertiaGain;
 				}
 
    			//printf("Inertia: M: %f, F: %ld\n", metric, force);
