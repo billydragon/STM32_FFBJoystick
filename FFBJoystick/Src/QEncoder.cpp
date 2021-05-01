@@ -176,12 +176,21 @@ void QEncoder::updatePosition (uint8_t idx)
 {
 
 	int32_t read_Position = getPos (idx);
+	int32_t deadZone = config.SysConfig.AC_MotorSettings[idx].Dead_Zone;
     QEncoder::Check_Axis_XY_Invert_Change ();
    if (axis[idx].inverted == true)
        read_Position = ~read_Position;
-   axis[idx].current_Position = read_Position;
-
-
+  // axis[idx].current_Position = read_Position;
+   if(read_Position - deadZone > 0)
+   {
+   	axis[idx].current_Position = read_Position - deadZone;
+   }
+   else if(read_Position + deadZone < 0)
+   {
+   	axis[idx].current_Position = read_Position + deadZone;
+   }
+   else
+   	axis[idx].current_Position = 0;
 
 }
 
