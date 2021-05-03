@@ -380,7 +380,7 @@ float AutoCenter_spring(uint8_t ax)
 	{
 		tempforce = (encoder.axis[ax].current_Position - deadband) * Coefficient * 0.0004f * gain[ax].springGain/255;
 	}
-	tempforce += encoder.axis[ax].current_Speed * Coefficient * 0.00020f * gain[ax].damperGain /255;
+	tempforce += encoder.axis[ax].current_Speed * Coefficient * 0.00025f * gain[ax].damperGain /255;
 	tempforce = -constrain(tempforce, -32767, 32767);
 	return tempforce;
 }

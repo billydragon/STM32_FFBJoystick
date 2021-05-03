@@ -85,8 +85,8 @@ extern "C"
 
 #ifndef WIN32
 /*Defines for Bset etc directives....*/
-#define Bset(data,val) data|=(val)
-#define Bclr(data,val) data&=~(val)
+#define Bset(data,val) data |=(val)
+#define Bclr(data,val) data &=~(val)
 #define Btest(data,val) ((data&(val))==(val))
 #define Bchg(data,val) if (Btest(data,val)) Bclr(data,val); else Bset(data,val)
 #define Bmov(data,data1,val) if (Btest(data,val)) Bset(data1,val); else Bclr(data1,val)

@@ -10,20 +10,22 @@ static const uint8_t pidReportDescriptor[]
 		  0x09, 0x92,        //   Usage (PID State Report)
 		  0xA1, 0x02,        //   Collection (Logical)
 			  0x85, 0x02,        //     Report ID (2)
-			  0x09, 0x9F,        //     Usage (Device Paused)
-			  0x09, 0xA0,        //     Usage (Actuators Enabled)
-			  0x09, 0xA4,        //     Usage (Safety Switch)
-			  0x09, 0xA5,        //     Usage (Actuator Override Switch)
-			  0x09, 0xA6,        //     Usage (Actuator Power)
+			  0x09, 0x9F,        //     Usage (Device Paused)					bit:0
+			  0x09, 0xA0,        //     Usage (Actuators Enabled)				bit:1
+			  0x09, 0xA4,        //     Usage (Safety Switch)					bit:2
+			  0x09, 0xA6,        //     Usage (Actuator Power)					bit:3
+			  0x09, 0x94,        //     Usage (Effect Playing)					bit:4
+			  0x09, 0xA5,        //     Usage (Actuator Override Switch) 	bit:5
 			  0x15, 0x00,        //     Logical Minimum (0)
 			  0x25, 0x01,        //     Logical Maximum (1)
 			  0x35, 0x00,        //     Physical Minimum (0)
 			  0x45, 0x01,        //     Physical Maximum (1)
 			  0x75, 0x01,        //     Report Size (1)
-			  0x95, 0x05,        //     Report Count (5)
+			  0x95, 0x06,        //     Report Count (6)
 			  0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
-			  0x95, 0x03,        //     Report Count (3)
+			  0x95, 0x02,        //     Report Count (2)
 			  0x81, 0x03,        //     Input (Const,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+			  /*
 			  0x09, 0x94,        //     Usage (Effect Playing)
 			  0x15, 0x00,        //     Logical Minimum (0)
 			  0x25, 0x01,        //     Logical Maximum (1)
@@ -32,12 +34,13 @@ static const uint8_t pidReportDescriptor[]
 			  0x75, 0x01,        //     Report Size (1)
 			  0x95, 0x01,        //     Report Count (1)
 			  0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
+			  */
 			  0x09, 0x22,        //     Usage (Effect Block Index)
 			  0x15, 0x01,        //     Logical Minimum (1)
 			  0x25, 0x28,        //     Logical Maximum (40)
 			  0x35, 0x01,        //     Physical Minimum (1)
 			  0x45, 0x28,        //     Physical Maximum (40)
-			  0x75, 0x07,        //     Report Size (7)
+			  0x75, 0x08,        //     Report Size (8)
 			  0x95, 0x01,        //     Report Count (1)
 			  0x81, 0x02,        //     Input (Data,Var,Abs,No Wrap,Linear,Preferred State,No Null Position)
 		  0xC0,              //   End Collection
@@ -150,10 +153,12 @@ static const uint8_t pidReportDescriptor[]
 		  0x66, 0x00, 0x00,  //     Unit (None)
 		  0x55, 0x00,        //     Unit Exponent (0)
 		  0xC0,              //   End Collection
+
 		  0x05, 0x0F,        //   Usage Page (PID Page)
 		  0x09, 0x5A,        //    Usage (Set Envelope Report)
 		  0xA1, 0x02,        //   Collection (Logical)
-		  0x85, 0x02,        //     Report ID (2)
+		  //0x85, 0x02,        //     Report ID (2)
+		  0x85, 0x09,        //     Report ID (9)
 		  0x09, 0x22,        //     Usage (Effect Block Index)
 		  0x15, 0x01,        //     Logical Minimum (1)
 		  0x25, 0x28,        //     Logical Maximum (40)
@@ -183,7 +188,8 @@ static const uint8_t pidReportDescriptor[]
 		  0x66, 0x00, 0x00,  //     Unit (None)
 		  0x55, 0x00,        //     Unit Exponent (0)
 		  0xC0,              //   End Collection
-		  0x09, 0x5F,        //   Usage (0x5F)
+
+		  0x09, 0x5F,        //   Usage Set Condition Report
 		  0xA1, 0x02,        //   Collection (Logical)
 		  0x85, 0x03,        //     Report ID (3)
 		  0x09, 0x22,        //     Usage (Effect Block Index)

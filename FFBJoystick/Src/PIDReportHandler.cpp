@@ -42,7 +42,6 @@ void PIDReportHandler::StopAllEffects (void)
   {
 	  StopEffect (id);
   }
-  this->FFB_Active = false;
 }
 
 void PIDReportHandler::StartEffect (uint8_t id)
@@ -52,12 +51,12 @@ void PIDReportHandler::StartEffect (uint8_t id)
   g_EffectStates[id].state = MEFFECTSTATE_PLAYING;
   g_EffectStates[id].elapsedTime = 0;
   g_EffectStates[id].startTime = (uint64_t) HAL_GetTick();
-  this->FFB_Active = true;
+
 }
 
 void PIDReportHandler::StopEffect (uint8_t id)
 {
-  if (id > MAX_EFFECTS)
+  if ((id > MAX_EFFECTS) || (g_EffectStates[id].state == 0))
     return;
   g_EffectStates[id].state &= ~MEFFECTSTATE_PLAYING;
   pidBlockLoad.ramPoolAvailable += SIZE_EFFECT;
@@ -65,8 +64,9 @@ void PIDReportHandler::StopEffect (uint8_t id)
 
 void PIDReportHandler::FreeEffect (uint8_t id)
 {
-  if (id > MAX_EFFECTS)
+  if (id ==0  || id > MAX_EFFECTS)
     return;
+
   g_EffectStates[id].state = FFB_EFFECT_NONE;
   if (id < nextEID)
     nextEID = id;
@@ -77,31 +77,38 @@ void PIDReportHandler::FreeAllEffects (void)
   nextEID = 1;
   memset ((void*) &g_EffectStates, 0, sizeof(g_EffectStates));
   pidBlockLoad.ramPoolAvailable = MEMORY_SIZE;
+  pidState.effectBlockIndex = 0;
+  pidState.status = (ACTUATOR_POWER) | (ACTUATORS_ENABLED);
 }
 
 void PIDReportHandler::EffectOperation (USB_FFBReport_EffectOperation_Output_Data_t *data)
 {
-  if (data->operation == 1)
-    { // Start
-      if (data->loopCount > 0)
-    	  g_EffectStates[data->effectBlockIndex].duration *= data->loopCount;
-      //if (data->loopCount == 0xFF)
-    	  //g_EffectStates[data->effectBlockIndex].duration = USB_DURATION_INFINITE;
+	uint8_t effectId = data->effectBlockIndex;
+	uint8_t op = data->operation;
 
-      StartEffect (data->effectBlockIndex);
-    }
-  else if (data->operation == 2)
-    {
-      StopAllEffects ();
-      StartEffect (data->effectBlockIndex);
-    }
-  else if (data->operation == 3)
-    {
-      StopEffect (data->effectBlockIndex);
-    }
-  else
-    {
-    }
+	switch(op)
+	{
+		case 1:
+				if (data->loopCount > 0)
+			    	g_EffectStates[effectId].duration *= data->loopCount;
+				   Bset(pidState.status,EFFECT_PLAYING);
+			      StartEffect (effectId);
+
+			break;
+		case 2:
+					StopAllEffects ();
+					Bset(pidState.status,EFFECT_PLAYING);
+			      StartEffect (effectId);
+			break;
+		case 3:
+					Bclr(pidState.status,EFFECT_PLAYING);
+					StopEffect (effectId);
+			break;
+		default:
+			break;
+
+	}
+
 }
 
 void PIDReportHandler::BlockFree (USB_FFBReport_BlockFree_Output_Data_t *data)
@@ -119,20 +126,17 @@ void PIDReportHandler::BlockFree (USB_FFBReport_BlockFree_Output_Data_t *data)
 }
 
 void PIDReportHandler::sendStatusReport(uint8_t effectID){
+		  pidState.reportId = 2;
 
-		this->pidState.effectBlockIndex = effectID;
-		this->pidState.status = HID_ACTUATOR_POWER;
+		  Bset(pidState.status,ACTUATOR_POWER);
+		  Bset(pidState.status, SAFETY_SWITCH);
+		  pidState.effectBlockIndex = effectID;
 
-		if(this->FFB_Active){
-			this->pidState.status |= HID_ENABLE_ACTUATORS;
-			this->pidState.status |= HID_EFFECT_PLAYING;
-		}else{
-			this->pidState.status |= HID_EFFECT_PAUSE;
-		}
-		if(effectID > 0 && g_EffectStates[effectID-1].state == 1)
-			this->pidState.status |= HID_EFFECT_PLAYING;
+		if(effectID > 0 && g_EffectStates[effectID].state == MEFFECTSTATE_PLAYING)
+			Bset(pidState.status,EFFECT_PLAYING);
 
-	 USBD_JOYSTICK_HID_SendReport_FS ((uint8_t *)&this->pidState, sizeof(USB_FFBReport_PIDStatus_Input_Data_t));
+
+	 USBD_JOYSTICK_HID_SendReport_FS ((uint8_t *)&pidState, sizeof(USB_FFBReport_PIDStatus_Input_Data_t));
 
 }
 
@@ -140,50 +144,53 @@ void PIDReportHandler::DeviceControl (
     USB_FFBReport_DeviceControl_Output_Data_t *data)
 {
 
-  pidState.reportId = 2;
-  Bset(pidState.status, SAFETY_SWITCH);
-  Bset(pidState.status, ACTUATOR_POWER);
-  pidState.effectBlockIndex = 0;
+	  uint8_t cmd = data->control;
+		// Control: 1=Enable Actuators, 2=Disable Actuators, 4=Stop All Effects, 8=Reset, 16=Pause, 32=Continue
+		// Status Bits: Status Bits: 0=Device Paused,1=Actuators Enabled,2=Safety Switch,3=Actuator Power, 4=Play, 5=Actuator Override Switch,
+	  if(cmd & 0x01) //1=Enable Actuators
+	  {
+				 Bset(pidState.status, ACTUATORS_ENABLED);
+				 FFB_Active = true;
+	  }
 
-  switch (data->control)
-    {
-    case 0x01:
-      // enable  actuators
-      Bclr(pidState.status, ACTUATORS_ENABLED);
-      //printf("Effects: Enabled.\n");
-      break;
-    case 0x02:
-      // disable actuators
-      Bset(pidState.status, ACTUATORS_ENABLED);
+	  if(cmd & 0x02) //2=Disable Actuators
+	  {
 
-      //printf("Effects: Disabled.\n");
-      break;
-    case 0x03:
-      // Disable auto-center spring and stop all effects
-      //SetAutoCenter(0);
-      StopAllEffects ();
-      //printf("Effects: Stop All.\n");
-      break;
-    case 0x04:
-      // Reset (e.g. FFB-application out of focus)
-      FreeAllEffects ();
-      //printf("Effects: Free All.\n");
-      break;
-    case 0x05:
-      // pause
-      Bset(pidState.status, DEVICE_PAUSED);
-      devicePaused = 1;
-      //printf("Effects: Paused.\n");
-      break;
-    case 0x06:
-      // continue
-      Bclr(pidState.status, DEVICE_PAUSED);
-      devicePaused = 0;
-      //printf("Effects: Continue.\n");
-      break;
-    default:
-      return;
-    }
+				 Bclr(pidState.status, ACTUATORS_ENABLED);
+	  }
+
+	  if(cmd & 0x03) //Stop All Effects Some app send
+	  {
+				 StopAllEffects ();
+				 FFB_Active = false;
+
+	  }
+
+	  if(cmd & 0x04) //4=Stop All Effects Some app send as device reset
+	  {
+				 StopAllEffects ();
+				 FreeAllEffects ();
+				 FFB_Active = false;
+	  }
+
+	  if(cmd & 0x08) //8=Reset
+	  {
+				 StopAllEffects ();
+				 FreeAllEffects ();
+				 FFB_Active = false;
+	  }
+
+	  if(cmd & 0x10) //16=Pause
+	  {
+				 Bset(pidState.status, DEVICE_PAUSED);
+				 devicePaused = 1;
+	  }
+
+	  if(cmd & 0x20) //32=Continue
+	  {
+				 Bclr(pidState.status, DEVICE_PAUSED);
+				 devicePaused = 0;
+	  }
 
 }
 
@@ -290,7 +297,6 @@ void PIDReportHandler::CreateNewEffect (USB_FFBReport_CreateNewEffect_Feature_Da
       pidState.effectBlockIndex = pidBlockLoad.effectBlockIndex;
     }
 
-  //printf("Effects: CreateNewEffect().\n");
 }
 
 void PIDReportHandler::UppackUsbData (uint8_t *data, uint16_t len)
@@ -300,64 +306,50 @@ void PIDReportHandler::UppackUsbData (uint8_t *data, uint16_t len)
   switch (data[0]) // reportID
     {
     case 1:
-
       SetEffect ((USB_FFBReport_SetEffect_Output_Data_t*) data);
-
       break;
-    case 2:
-
+    case 2: //My Device don't work on ReportID(2) -> Move to ReportID(9)
       SetEnvelope ((USB_FFBReport_SetEnvelope_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 3:
-
       SetCondition ((USB_FFBReport_SetCondition_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 4:
-
       SetPeriodic ((USB_FFBReport_SetPeriodic_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 5:
-
       SetConstantForce ((USB_FFBReport_SetConstantForce_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 6:
-
       SetRampForce ((USB_FFBReport_SetRampForce_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 7:
-
       SetCustomForceData ((USB_FFBReport_SetCustomForceData_Output_Data_t*) data);
       break;
     case 8:
-
       SetDownloadForceSample ((USB_FFBReport_SetDownloadForceSample_Output_Data_t*) data);
       break;
     case 9:
+   	 SetEnvelope ((USB_FFBReport_SetEnvelope_Output_Data_t*) data, &g_EffectStates[effectId]);
       break;
     case 10:
-
       EffectOperation ((USB_FFBReport_EffectOperation_Output_Data_t*) data);
-
+      sendStatusReport(effectId);
       break;
     case 11:
-
       BlockFree ((USB_FFBReport_BlockFree_Output_Data_t*) data);
       break;
     case 12:
-
       DeviceControl ((USB_FFBReport_DeviceControl_Output_Data_t*) data);
-      sendStatusReport(effectId);
+      sendStatusReport(0);
       break;
     case 13:
-
       DeviceGain ((USB_FFBReport_DeviceGain_Output_Data_t*) data);
       break;
     case 14:
-
       SetCustomForce ((USB_FFBReport_SetCustomForce_Output_Data_t*) data);
       break;
     case 0x11:
-
       CreateNewEffect ((USB_FFBReport_CreateNewEffect_Feature_Data_t*) data);
       break;
     default:

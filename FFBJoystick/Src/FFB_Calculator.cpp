@@ -180,23 +180,19 @@ void forceCalculator (int32_t *forces)
     {
       volatile TEffectState &effect = pidReportHandler.g_EffectStates[id];
 
-      		if (effect.state != EFFECT_STATE_INACTIVE && effect.duration != USB_DURATION_INFINITE)
-      		{
-      			if(HAL_GetTick() < effect.startTime)
-      			{
-					continue;
-				}
-      			if(HAL_GetTick() > (effect.startTime + effect.duration))
-				{
-					effect.state = EFFECT_STATE_INACTIVE;
-				}
-      		}
+		if (effect.state != MEFFECTSTATE_PLAYING && effect.duration != USB_DURATION_INFINITE)
+		{
+			if(HAL_GetTick() < effect.startTime)
+			{
+				continue;
+			}
 
-      		// Filter out inactive effects
-      		if (effect.state == EFFECT_STATE_INACTIVE)
-      		{
-      			continue;
-      		}
+			if(HAL_GetTick() > (effect.startTime + effect.duration))
+			{
+				effect.state &= ~MEFFECTSTATE_PLAYING;
+			}
+		}
+
 
       if ((effect.state == MEFFECTSTATE_PLAYING) && ((effect.elapsedTime <= effect.duration)
 	      || (effect.duration == USB_DURATION_INFINITE))  && !pidReportHandler.devicePaused)
@@ -314,7 +310,7 @@ else
    			setDamperFilter(axis);
    			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.25f;	//.0625f;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   		   force = ConditionForceCalculator(effect, metric, 0.6f , condition) * angle_ratio * _gains.damperGain;
+   		   force = ConditionForceCalculator(effect, metric, 0.5f , condition) * angle_ratio * _gains.damperGain;
 
    		   //printf("Damper: M: %f, F: %ld\n", metric, force);
    		break;

@@ -4,14 +4,16 @@
 #include "PIDReportType.h"
 #include "FFBMain.h"
 
+//Status Bits: 0=Device Paused,1=Actuators Enabled,2=Safety Switch,3=Actuator Power, 4=Play, 5=Actuator Override Switch,
 #define DEVICE_PAUSED			0x01
 #define ACTUATORS_ENABLED		0x02
 #define SAFETY_SWITCH			0x04
-#define ACTUATOR_OVERRIDE		0x08
-#define ACTUATOR_POWER			0x10
+#define ACTUATOR_POWER			0x08
+#define EFFECT_PLAYING 			0x10
+#define ACTUATOR_OVERRIDE		0x20
 
 #define HID_ENABLE_ACTUATORS_MASK 0xFD
-#define HID_EFFECT_PLAYING 		0x10
+
 
 class PIDReportHandler
 {
@@ -32,6 +34,7 @@ public:
   volatile USB_FFBReport_PIDPool_Feature_Data_t pidPoolReport;
   volatile USB_FFBReport_DeviceGain_Output_Data_t deviceGain;
   bool FFB_Active;
+
   //ffb state structures
   uint8_t GetNextFreeEffect (void);
   void StartEffect (uint8_t id);

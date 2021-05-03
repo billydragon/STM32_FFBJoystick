@@ -737,29 +737,27 @@ void Joystick_::sendState ()
   uint8_t _report[_hidReportSize + 1];
   _report[0] = _hidReportId;
   memcpy (&_report[1], data, _hidReportSize);
-
-  if(HAL_GetTick() - JoystickReportTime > 5)
+  uint8_t n = memcmp(data, Last_HidReport,_hidReportSize);
+  uint32_t time = HAL_GetTick();
+  if(( time - JoystickReportTime >= 5) && (n != 0))
   {
 	  int8_t result = USBD_JOYSTICK_HID_SendReport_FS ( _report, (uint16_t) _hidReportSize + 1);
 	    if (result == USBD_OK)
 	      {
 	   			 JoystickReportTime = HAL_GetTick();
 	      }
-  }
-  else
-  {
-	  uint8_t n = memcmp(data, Last_HidReport,_hidReportSize);
-	 if (n != 0)
-	 {
-		 int8_t result = USBD_JOYSTICK_HID_SendReport_FS ( _report, (uint16_t) _hidReportSize + 1);
-		 if (result == USBD_OK)
-			{
-				 JoystickReportTime = HAL_GetTick();
-			}
-		 memcpy (Last_HidReport, data, _hidReportSize);
-	 }
 
   }
+  else if( time - JoystickReportTime >= 10)
+  {
+
+	  int8_t result = USBD_JOYSTICK_HID_SendReport_FS ( _report, (uint16_t) _hidReportSize + 1);
+	  	    if (result == USBD_OK)
+	  	      {
+	  	   			 JoystickReportTime = HAL_GetTick();
+	  	      }
+  }
+  memcpy (Last_HidReport, data, _hidReportSize);
 
 }
 
