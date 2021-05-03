@@ -31,13 +31,16 @@ TDF_BUTTON Estop_Sw;
 
 uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
 USB_LoggerReport_t USBLog;
+
 uint32_t USBLog_timer =0;
 volatile bool RunFirstTime = true;
 
-#define GOBACK_KP		5.00f
-#define GOBACK_KI		0.00f
+
+#define GOBACK_KP		3.00f
+#define GOBACK_KI		0.50f
 #define GOBACK_KD		0.00f
-#define GOBACK_SAMPLETIME	0.001f
+#define GOBACK_SAMPLETIME	0.01f
+
 
 double Setpoint[2], Input[2], Output[2];
 double Kp[2], Ki[2], Kd[2];
@@ -123,6 +126,11 @@ void init_Joystick ()
 	Buttons[9].pinNumber = JBUTTON9_Pin;
 	Buttons[9].Port = JBUTTON9_GPIO_Port;
 
+	Buttons[10].pinNumber = JBUTTON10_Pin;
+	Buttons[10].Port = JBUTTON10_GPIO_Port;
+
+	Buttons[11].pinNumber = JBUTTON11_Pin;
+	Buttons[11].Port = JBUTTON11_GPIO_Port;
 
 
   Limit_Switch[X_LIMIT_MAX].pinNumber = X_LIMIT_MAX_Pin;
@@ -148,86 +156,92 @@ void init_Joystick ()
 
 }
 
-void Update_Joystick_Position()
+
+void Update_Analog_Axis()
 {
-		//int32_t tempforces[2] = {0,0};
-	for (int i = 0; i < NUM_OF_BUTTONS; i++)
-	    {
-	      if (Buttons[i].LastState != Buttons[i].CurrentState)
+			if (analog_axis[RX_AXIS].current_Position > analog_axis[RX_AXIS].maxValue)
+		    {
+		      Joystick.setRxAxis (analog_axis[RX_AXIS].maxValue);
+		    }
+		  else if (analog_axis[RX_AXIS].current_Position < analog_axis[RX_AXIS].minValue)
+		    {
+		      Joystick.setRxAxis (analog_axis[RX_AXIS].minValue);
+		    }
+		  else
+		    {
+		      Joystick.setRxAxis (analog_axis[RX_AXIS].current_Position);
+
+		    }
+
+		  if (analog_axis[RY_AXIS].current_Position > analog_axis[RY_AXIS].maxValue)
+		    {
+		      Joystick.setRyAxis (analog_axis[RY_AXIS].maxValue);
+		    }
+		  else if (analog_axis[RY_AXIS].current_Position < analog_axis[RY_AXIS].minValue)
+		    {
+		      Joystick.setRyAxis (analog_axis[RY_AXIS].minValue);
+		    }
+		  else
+		    {
+		      Joystick.setRyAxis (analog_axis[RY_AXIS].current_Position);
+
+		    }
+
+}
+
+
+void Update_Encoder_Axis(int32_t * tempForce)
+{
+
+		for(int i =0; i <2;i++)
 		{
-		  Buttons[i].LastState = Buttons[i].CurrentState;
-		  Joystick.setButton (i, Buttons[i].CurrentState);
+					myPID[i].SetTunings(GOBACK_KP, GOBACK_KI, GOBACK_KD);
+					myPID[i].SetSampleTime(GOBACK_SAMPLETIME);
+					myPID[i].SetOutputLimits(-32000, 32000);
+					myPID[i].SetMode(AUTOMATIC);
+					//Setpoint[axis_num] = Target;
 		}
-	    }
 
 	  encoder.updatePosition (X_AXIS);
 
-	  if (encoder.axis[X_AXIS].current_Position >= encoder.axis[X_AXIS].maxValue)
+	  if (encoder.axis[X_AXIS].current_Position >= encoder.axis[X_AXIS].maxValue )
 	    {
-		  Correct_Joystick_Positions(X_AXIS, encoder.axis[X_AXIS].maxValue);
-		  //tempforces[X_AXIS] = -32767;
-		  //Motors.SetMotorOutput(tempforces);
-	      Joystick.setXAxis (encoder.axis[X_AXIS].maxValue);
+			  Setpoint[X_AXIS] = encoder.axis[X_AXIS].maxValue;
+			  myPID[X_AXIS].Compute();
+			  tempForce[X_AXIS] = -Output[X_AXIS];
+	        Joystick.setXAxis (encoder.axis[X_AXIS].maxValue);
 	    }
 	  else if (encoder.axis[X_AXIS].current_Position <= encoder.axis[X_AXIS].minValue)
 	    {
-		  Correct_Joystick_Positions(X_AXIS, encoder.axis[X_AXIS].minValue);
-		  //tempforces[X_AXIS] = 32767;
-		  //Motors.SetMotorOutput(tempforces);
-	      Joystick.setXAxis (encoder.axis[X_AXIS].minValue);
+			  Setpoint[X_AXIS] = encoder.axis[X_AXIS].minValue;
+			  myPID[X_AXIS].Compute();
+			  tempForce[X_AXIS] = -Output[X_AXIS];
+			  Joystick.setXAxis (encoder.axis[X_AXIS].minValue);
 	    }
 	  else
 	    {
-	      Joystick.setXAxis (encoder.axis[X_AXIS].current_Position);
+	       Joystick.setXAxis (encoder.axis[X_AXIS].current_Position);
 	    }
 
 	      encoder.updatePosition (Y_AXIS);
 
 	  if (encoder.axis[Y_AXIS].current_Position >= encoder.axis[Y_AXIS].maxValue)
 	    {
-		  Correct_Joystick_Positions(Y_AXIS, encoder.axis[Y_AXIS].maxValue);
-		  //tempforces[Y_AXIS] = -32767;
-		  //Motors.SetMotorOutput(tempforces);
-	      Joystick.setYAxis (encoder.axis[Y_AXIS].maxValue);
+			   Setpoint[Y_AXIS] = encoder.axis[Y_AXIS].maxValue;
+			   myPID[Y_AXIS].Compute();
+			   tempForce[Y_AXIS] = -Output[Y_AXIS];
+				Joystick.setYAxis (encoder.axis[Y_AXIS].maxValue);
 	    }
 	  else if (encoder.axis[Y_AXIS].current_Position <= encoder.axis[Y_AXIS].minValue)
 	    {
-		  Correct_Joystick_Positions(Y_AXIS, encoder.axis[Y_AXIS].minValue);
-		  //tempforces[Y_AXIS] = 32767;
-		  //Motors.SetMotorOutput(tempforces);
-	      Joystick.setYAxis (encoder.axis[Y_AXIS].minValue);
+				Setpoint[Y_AXIS] = encoder.axis[Y_AXIS].minValue;
+		 		myPID[Y_AXIS].Compute();
+		 		tempForce[Y_AXIS] = -Output[Y_AXIS];
+		 		Joystick.setYAxis (encoder.axis[Y_AXIS].minValue);
 	    }
 	  else
 	    {
 	      Joystick.setYAxis (encoder.axis[Y_AXIS].current_Position);
-	    }
-
-	  if (analog_axis[RX_AXIS].current_Position > analog_axis[RX_AXIS].maxValue)
-	    {
-	      Joystick.setRxAxis (analog_axis[RX_AXIS].maxValue);
-	    }
-	  else if (analog_axis[RX_AXIS].current_Position < analog_axis[RX_AXIS].minValue)
-	    {
-	      Joystick.setRxAxis (analog_axis[RX_AXIS].minValue);
-	    }
-	  else
-	    {
-	      Joystick.setRxAxis (analog_axis[RX_AXIS].current_Position);
-
-	    }
-
-	  if (analog_axis[RY_AXIS].current_Position > analog_axis[RY_AXIS].maxValue)
-	    {
-	      Joystick.setRyAxis (analog_axis[RY_AXIS].maxValue);
-	    }
-	  else if (analog_axis[RY_AXIS].current_Position < analog_axis[RY_AXIS].minValue)
-	    {
-	      Joystick.setRyAxis (analog_axis[RY_AXIS].minValue);
-	    }
-	  else
-	    {
-	      Joystick.setRyAxis (analog_axis[RY_AXIS].current_Position);
-
 	    }
 
 }
@@ -237,52 +251,69 @@ void Update_Joystick_Position()
 void start_joystick ()
 {
 
+	int32_t _tempforce[2] = { 0, 0};
 	if(RunFirstTime == true)
 	{
-		if(config.SysConfig.AppConfig.Auto_Calibration ==1)
-		{
-			findCenter_Auto();
-		}
-		else
-		{
-			findCenter_Manual(X_AXIS);
-			HAL_Delay(500);
-			findCenter_Manual(Y_AXIS);
-			HAL_Delay(500);
-		}
+			if(config.SysConfig.AppConfig.Auto_Calibration ==1)
+			{
+				findCenter_Auto();
+			}
+			else
+			{
+				findCenter_Manual(X_AXIS);
+				HAL_Delay(500);
+				findCenter_Manual(Y_AXIS);
+				HAL_Delay(500);
+			}
 
-		gotoPosition(X_AXIS, 0);
-		gotoPosition(Y_AXIS, 0);
+			gotoPosition(X_AXIS, 0);
+			gotoPosition(Y_AXIS, 0);
 
-		RunFirstTime = false;
+			RunFirstTime = false;
 	}
 
-	   Update_Joystick_Position();
+		for (int i = 0; i < NUM_OF_BUTTONS; i++)
+		    {
+		      if (Buttons[i].LastState != Buttons[i].CurrentState)
+				{
+				  Buttons[i].LastState = Buttons[i].CurrentState;
+				  Joystick.setButton (i, Buttons[i].CurrentState);
+				}
+		    }
+		Update_Analog_Axis();
+
+	   Update_Encoder_Axis(_tempforce);
 
 	   SetEffects();
 		Set_Gains();
+
 		getForce (xy_forces);
 
  if (config.SysConfig.AppConfig.AutoCenter == true)
     {
 		 if(pidReportHandler.FFB_Active == false)
 		 {
-			 xy_forces[X_AXIS] = (int32_t) AutoCenter_spring(X_AXIS);
-			 xy_forces[Y_AXIS] = (int32_t) AutoCenter_spring(Y_AXIS);
+			 xy_forces[X_AXIS] += (int32_t) AutoCenter_spring(X_AXIS);
+			 xy_forces[Y_AXIS] += (int32_t) AutoCenter_spring(Y_AXIS);
 
 		 }
     }
 
-	Motors.SetMotorOutput(xy_forces);
-	Send_Debug_Report();
+	 xy_forces[X_AXIS] += _tempforce[X_AXIS];
+	 xy_forces[Y_AXIS] += _tempforce[Y_AXIS];
+
+	 xy_forces[X_AXIS] = constrain(xy_forces[X_AXIS], -32767,32767);
+	 xy_forces[Y_AXIS] = constrain(xy_forces[Y_AXIS], -32767,32767);
+
+	 Motors.SetMotorOutput(xy_forces);
+	 Send_Debug_Report();
 
 }
 
 void Send_Debug_Report()
 {
-	if(micros()- USBLog_timer > USBLOG_INTERVAL)
+	 if(HAL_GetTick()- USBLog_timer >= USBLOG_INTERVAL)
 		{
-
 			  USBLog.xy_forces[X_AXIS] = xy_forces[X_AXIS];
 			  USBLog.xy_forces[Y_AXIS] = xy_forces[Y_AXIS];
 			  USBLog.current_pos[X_AXIS] = constrain(encoder.axis[X_AXIS].current_Position, encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
@@ -291,13 +322,16 @@ void Send_Debug_Report()
 			  USBLog.axis_max[X_AXIS] = encoder.axis[X_AXIS].maxValue;
 			  USBLog.axis_min[Y_AXIS] = encoder.axis[Y_AXIS].minValue;
 			  USBLog.axis_max[Y_AXIS] = encoder.axis[Y_AXIS].maxValue;
-
 			  uint8_t fReport[USBD_CUSTOMHID_INREPORT_BUF_SIZE] = { 0 };
 			  uint8_t offset = 0;
 			  memcpy (&fReport[offset], (uint8_t*)&USBLog, sizeof(USB_LoggerReport_t));
 
-			  USBD_CUSTOM_HID_SendReport_FS (fReport, sizeof(fReport));
-			  USBLog_timer = micros();
+			  uint8_t result =  USBD_CUSTOM_HID_SendReport_FS (fReport, sizeof(fReport));
+			  if (result == USBD_OK)
+				{
+					  USBLog_timer = HAL_GetTick();
+				}
+
 		}
 
 
@@ -380,7 +414,7 @@ float AutoCenter_spring(uint8_t ax)
 	{
 		tempforce = (encoder.axis[ax].current_Position - deadband) * Coefficient * 0.0004f * gain[ax].springGain/255;
 	}
-	tempforce += encoder.axis[ax].current_Speed * Coefficient * 0.00025f * gain[ax].damperGain /255;
+	tempforce += encoder.axis[ax].current_Speed * Coefficient * 0.00027f * gain[ax].damperGain /255;
 	tempforce = -constrain(tempforce, -32767, 32767);
 	return tempforce;
 }

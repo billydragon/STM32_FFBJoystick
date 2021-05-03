@@ -75,7 +75,6 @@ void Error_Handler(void);
 #define JBUTTON6_EXTI_IRQn EXTI9_5_IRQn
 #define JBUTTON0_Pin GPIO_PIN_0
 #define JBUTTON0_GPIO_Port GPIOA
-#define JBUTTON0_EXTI_IRQn EXTI0_IRQn
 #define JBUTTON1_Pin GPIO_PIN_1
 #define JBUTTON1_GPIO_Port GPIOA
 #define JBUTTON1_EXTI_IRQn EXTI1_IRQn
@@ -93,6 +92,9 @@ void Error_Handler(void);
 #define MOTOR_X_DIR_GPIO_Port GPIOB
 #define TIM1_PWM1_Pin GPIO_PIN_9
 #define TIM1_PWM1_GPIO_Port GPIOE
+#define JBUTTON10_Pin GPIO_PIN_10
+#define JBUTTON10_GPIO_Port GPIOE
+#define JBUTTON10_EXTI_IRQn EXTI15_10_IRQn
 #define TIM1_PWM2_Pin GPIO_PIN_11
 #define TIM1_PWM2_GPIO_Port GPIOE
 #define TIM1_PWM3_Pin GPIO_PIN_13
@@ -132,6 +134,9 @@ void Error_Handler(void);
 #define JBUTTON9_Pin GPIO_PIN_9
 #define JBUTTON9_GPIO_Port GPIOC
 #define JBUTTON9_EXTI_IRQn EXTI9_5_IRQn
+#define JBUTTON11_Pin GPIO_PIN_11
+#define JBUTTON11_GPIO_Port GPIOC
+#define JBUTTON11_EXTI_IRQn EXTI15_10_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

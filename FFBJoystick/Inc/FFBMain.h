@@ -61,7 +61,7 @@ extern "C"
 #define NUM_OF_ANALOG_AXIS		2
 
 #define NUM_OF_LIMITSWITCH		4
-#define NUM_OF_BUTTONS			10
+#define NUM_OF_BUTTONS			12
 #define NUM_OF_HATSWITCH		0
 #define ENCODER_MAX			 	1000000 		//-32767
 #define ENCODER_MIN			  	-1000000		//32767
@@ -84,7 +84,7 @@ extern "C"
 #define MIN_DAC_OUT_VOLT		0
 #define MAX_DAC_OUT_VOLT		10000
 
-#define USBLOG_INTERVAL		10000
+#define USBLOG_INTERVAL		10
 
 #define EFFECT_CALC_BY_TIME	1
 
@@ -114,7 +114,8 @@ typedef struct //PID state
   void Set_RunFirstTime_state(bool state);
   void Send_Debug_Report();
   void findCenter_Auto();
-  void Update_Joystick_Position();
+  void Update_Encoder_Axis(int32_t * tempForce);
+  void Update_Analog_Axis(void);
   void Correct_Joystick_Positions(int axis_num, int32_t targetPosition);
   float AutoCenter_spring(uint8_t ax);
 

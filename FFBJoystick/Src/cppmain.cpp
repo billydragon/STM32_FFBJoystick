@@ -58,7 +58,7 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 
 		}
 
-  //JBUTTON1 - JBUTTON9
+  //JBUTTON1 - JBUTTON11
 	for (int i = 1; i < NUM_OF_BUTTONS; i++)
 	{
 		if (GPIO_Pin == Buttons[i].pinNumber)
@@ -74,8 +74,8 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 					 }
 				  else
 					 {
-					  for(long d = 0; d < 500000; d++) { __ASM volatile ("NOP"); }
-
+					  //for(long d = 0; d < 500000; d++) { __ASM volatile ("NOP"); }
+					   delay_us(15000);
 						Buttons[i].CurrentState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
 
 					 }
