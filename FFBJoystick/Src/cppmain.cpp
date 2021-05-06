@@ -36,52 +36,55 @@ void delay_us (uint16_t us)
 void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 {
 
-	//JBUTTON0
-	if (GPIO_Pin == Buttons[0].pinNumber)
-		{
-		  uint8_t bState = HAL_GPIO_ReadPin (Buttons[0].Port, Buttons[0].pinNumber);
-		  if (Buttons[0].CurrentState != bState)
-		{
-		  if ((HAL_GetTick () - Buttons[0].millis_time) > DEBOUNCE_TIME)
-			{
-
-			  Buttons[0].CurrentState = bState;
-			  Buttons[0].millis_time = HAL_GetTick ();
-			}
-		  else
-			{
-			  Buttons[0].CurrentState = HAL_GPIO_ReadPin (Buttons[0].Port, Buttons[0].pinNumber);
-			}
-		}
-
-		  EXTI->PR |= Buttons[0].pinNumber;
-
-		}
-
-  //JBUTTON1 - JBUTTON11
-	for (int i = 1; i < NUM_OF_BUTTONS; i++)
+	uint8_t bState = 0;
+  //JBUTTON0 - JBUTTON11
+	for (int i = 0; i < NUM_OF_EXTI; i++)
 	{
+
 		if (GPIO_Pin == Buttons[i].pinNumber)
 		    {
-		      uint8_t bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
-		      if (Buttons[i].CurrentState != bState)
-		      {
-				  if ((HAL_GetTick () - Buttons[i].millis_time) > DEBOUNCE_TIME)
+				  if ((HAL_GetTick () - Buttons[i].millis_time) < DEBOUNCE_TIME)
 					 {
-
-						Buttons[i].CurrentState = bState;
+					  for(long d = 0; d < 25000; d++) { ; }
 
 					 }
+
+				  bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
+
+				  if(i > 5 && i < 10)	// Left stick buttons
+				  {
+
+					  if(bState & !HAL_GPIO_ReadPin (Buttons[10].Port, Buttons[10].pinNumber))
+					  {
+						  Buttons[i].CurrentState = 0;
+						  Buttons[10].CurrentState = 0;
+						  HatButtons[i - 6].CurrentState = bState;
+					  }
+					  else
+					  {
+						  HatButtons[i - 6].CurrentState = 0;
+						  Buttons[i].CurrentState = bState;
+					  }
+
+				  }
+				  else if (i == 10)
+				  {
+					  Buttons[10].CurrentState = bState;
+					  for (int h = 0; h <4 ; h++)
+					  {
+						  if (HatButtons[h].CurrentState)
+						  {
+							  Buttons[10].CurrentState = 0;
+						  }
+					  }
+				  }
 				  else
-					 {
-					  //for(long d = 0; d < 500000; d++) { __ASM volatile ("NOP"); }
-					   delay_us(15000);
-						Buttons[i].CurrentState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
+				  {
+					  Buttons[i].CurrentState = bState;
+				  }
 
-					 }
-		      }
-		      Buttons[i].millis_time = HAL_GetTick ();
-		      EXTI->PR |= Buttons[i].pinNumber;
+				  Buttons[i].millis_time = HAL_GetTick ();
+				  EXTI->PR |= Buttons[i].pinNumber;
 
 		    }
 
@@ -93,7 +96,7 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 	  LimitSwitch_trig(GPIO_Pin);
   		}
 
-
+  __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }
 
 void LimitSwitch_trig(uint16_t GPIO_Pin)

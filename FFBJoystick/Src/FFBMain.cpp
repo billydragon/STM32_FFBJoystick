@@ -25,6 +25,7 @@ QEncoder encoder  __attribute__((section("ccmram")));
 MotorDriver Motors  __attribute__((section("ccmram")));
 
 TDF_BUTTON Buttons[NUM_OF_BUTTONS];
+TDF_BUTTON HatButtons[4];
 TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
 
 TDF_BUTTON Estop_Sw;
@@ -37,7 +38,7 @@ volatile bool RunFirstTime = true;
 
 
 #define GOBACK_KP		3.00f
-#define GOBACK_KI		0.50f
+#define GOBACK_KI		0.1f
 #define GOBACK_KD		0.00f
 #define GOBACK_SAMPLETIME	0.01f
 
@@ -129,8 +130,7 @@ void init_Joystick ()
 	Buttons[10].pinNumber = JBUTTON10_Pin;
 	Buttons[10].Port = JBUTTON10_GPIO_Port;
 
-	Buttons[11].pinNumber = JBUTTON11_Pin;
-	Buttons[11].Port = JBUTTON11_GPIO_Port;
+
 
 
   Limit_Switch[X_LIMIT_MAX].pinNumber = X_LIMIT_MAX_Pin;
@@ -274,12 +274,34 @@ void start_joystick ()
 
 		for (int i = 0; i < NUM_OF_BUTTONS; i++)
 		    {
+
 		      if (Buttons[i].LastState != Buttons[i].CurrentState)
 				{
-				  Buttons[i].LastState = Buttons[i].CurrentState;
+		      	Buttons[i].LastState = Buttons[i].CurrentState;
 				  Joystick.setButton (i, Buttons[i].CurrentState);
 				}
 		    }
+
+		if(HatButtons[0].CurrentState)
+		{
+			Joystick.setHatSwitch(0,0);
+		}
+		else if(HatButtons[1].CurrentState)
+		{
+			Joystick.setHatSwitch(0,90);
+		}
+		else if(HatButtons[2].CurrentState)
+		{
+			Joystick.setHatSwitch(0,270);
+		}
+		else if(HatButtons[3].CurrentState)
+		{
+			Joystick.setHatSwitch(0,180);
+		}
+		else
+			Joystick.setHatSwitch(0,-1);
+
+
 		Update_Analog_Axis();
 
 	   Update_Encoder_Axis(_tempforce);

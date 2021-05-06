@@ -61,8 +61,9 @@ extern "C"
 #define NUM_OF_ANALOG_AXIS		2
 
 #define NUM_OF_LIMITSWITCH		4
-#define NUM_OF_BUTTONS			12
-#define NUM_OF_HATSWITCH		0
+#define NUM_OF_BUTTONS			16
+#define NUM_OF_EXTI				12
+#define NUM_OF_HATSWITCH		1
 #define ENCODER_MAX			 	1000000 		//-32767
 #define ENCODER_MIN			  	-1000000		//32767
 
@@ -74,7 +75,7 @@ extern "C"
 #define XY_FORCE_MAX			32767
 #define XY_FORCE_MIN			-32767
 
-#define DEBOUNCE_TIME		   25
+#define DEBOUNCE_TIME		   15
 
 #define REPORT_FORCES_DATA		0x01
 #define REPORT_JOYSTICK_DATA	0x02
@@ -99,6 +100,7 @@ typedef struct //PID state
 
   extern TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS];
   extern TDF_BUTTON Buttons[NUM_OF_BUTTONS];
+  extern TDF_BUTTON HatButtons[4];
   extern uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
   extern TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
   extern TDF_BUTTON Estop_Sw;
