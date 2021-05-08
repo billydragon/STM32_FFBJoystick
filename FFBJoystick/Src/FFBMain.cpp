@@ -431,6 +431,7 @@ float AutoCenter_spring(uint8_t ax)
 	if(encoder.axis[ax].current_Position < -deadband)
 	{
 		tempforce = (encoder.axis[ax].current_Position + deadband) * Coefficient * 0.0004f * gain[ax].springGain/255;
+
 	}
 	else if(encoder.axis[ax].current_Position > deadband)
 	{
