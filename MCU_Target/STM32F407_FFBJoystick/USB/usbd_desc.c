@@ -65,9 +65,9 @@
 
 #define USBD_VID     0x2906
 #define USBD_LANGID_STRING     1033
-#define USBD_MANUFACTURER_STRING     		"BILLYDRAGON"
+#define USBD_MANUFACTURER_STRING     		"Billydragon"
 #define USBD_PID_FS     0x1969
-#define USBD_PRODUCT_STRING_FS     			"STM32 FFB JOYSTICK"
+#define USBD_PRODUCT_STRING_FS     			"Billydragon FFB Yoke"
 #define USBD_CONFIGURATION_STRING_FS     	"STM32 HID Config"
 #define USBD_INTERFACE_STRING_FS     		"STM32 HID Interface"
 
