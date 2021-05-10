@@ -31,7 +31,34 @@ void delay_us (uint16_t us)
     {;}
 }
 
+uint32_t multiplier;
 
+void TM_Delay_Init(void) {
+
+    /* Get system clocks */
+
+    uint32_t clkval = HAL_RCC_GetSysClockFreq();		//sysclk
+
+    /* While loop takes 4 cycles */
+    /* For 1 us delay, we need to divide with 4M */
+    multiplier = clkval / 4000000;
+}
+
+void TM_DelayMicros(uint32_t micros) {
+    /* Multiply micros with multipler */
+    /* Substract 10 */
+    micros = micros * multiplier - 10;
+    /* 4 cycles for one loop */
+    while (micros--);
+}
+
+void TM_DelayMillis(uint32_t millis) {
+    /* Multiply millis with multipler */
+    /* Substract 10 */
+    millis = 1000 * millis * multiplier - 10;
+    /* 4 cycles for one loop */
+    while (millis--);
+}
 
 void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 {
@@ -43,21 +70,21 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 
 		if (GPIO_Pin == Buttons[i].pinNumber)
 		    {
+			__disable_irq ();
+					bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
 				  if ((HAL_GetTick () - Buttons[i].millis_time) < DEBOUNCE_TIME)
 					 {
-					  for(long d = 0; d < 25000; d++) { ; }
-
+					  TM_DelayMillis(DEBOUNCE_TIME);
+					  bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
 					 }
 
-				  bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
-
-				  if(i > 5 && i < 10)	// Left stick buttons
+				  if(i > 5 && i < ENC_PUSH_BUTTON)	// Left stick buttons
 				  {
-
-					  if(bState & !HAL_GPIO_ReadPin (Buttons[10].Port, Buttons[10].pinNumber))
+					  //TM_DelayMillis(100);
+					  if(bState & !HAL_GPIO_ReadPin (Buttons[ENC_PUSH_BUTTON].Port, Buttons[ENC_PUSH_BUTTON].pinNumber))
 					  {
 						  Buttons[i].CurrentState = 0;
-						  Buttons[10].CurrentState = 0;
+						  Buttons[ENC_PUSH_BUTTON].CurrentState = 0;
 						  HatButtons[i - 6].CurrentState = bState;
 					  }
 					  else
@@ -67,14 +94,14 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 					  }
 
 				  }
-				  else if (i == 10)
+				  else if (i == ENC_PUSH_BUTTON)
 				  {
-					  Buttons[10].CurrentState = bState;
-					  for (int h = 0; h <4 ; h++)
+					  Buttons[ENC_PUSH_BUTTON].CurrentState = bState;
+					  for (int h = 0; h < 4 ; h++)
 					  {
-						  if (HatButtons[h].CurrentState)
+						  if ((HatButtons[h].CurrentState) || (Buttons[h + 6].CurrentState))
 						  {
-							  Buttons[10].CurrentState = 0;
+							  Buttons[ENC_PUSH_BUTTON].CurrentState = 0;
 						  }
 					  }
 				  }
@@ -82,7 +109,9 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 				  {
 					  Buttons[i].CurrentState = bState;
 				  }
+				 __enable_irq();
 
+				  //Buttons[i].CurrentState = bState;
 				  Buttons[i].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Buttons[i].pinNumber;
 
@@ -104,50 +133,40 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 
 		  if(GPIO_Pin == Limit_Switch[X_LIMIT_MAX].pinNumber)
 		  {
-			  if ((HAL_GetTick () - Limit_Switch[X_LIMIT_MAX].millis_time) > 5)
+			  if ((HAL_GetTick () - Limit_Switch[X_LIMIT_MAX].millis_time) < 5)
 			  {
+				  //for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
+				  TM_DelayMillis(5);
+			  }
 
 				  Limit_Switch[X_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MAX].Port, Limit_Switch[X_LIMIT_MAX].pinNumber);
 
-			  }
-			  else
-			  {
-				  for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
-				  Limit_Switch[X_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MAX].Port, Limit_Switch[X_LIMIT_MAX].pinNumber);
-
-			  }
 			     Limit_Switch[X_LIMIT_MAX].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Limit_Switch[X_LIMIT_MAX].pinNumber;
 		  }
 		  else if(GPIO_Pin == Limit_Switch[X_LIMIT_MIN].pinNumber)
 		  {
-			  if ((HAL_GetTick () - Limit_Switch[X_LIMIT_MIN].millis_time) > 5)
+			  if ((HAL_GetTick () - Limit_Switch[X_LIMIT_MIN].millis_time) < 5)
 			  {
-
-				  Limit_Switch[X_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MIN].Port, Limit_Switch[X_LIMIT_MIN].pinNumber);
+				  //for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
+				  TM_DelayMillis(5);
 
 			  }
-			  else
-			  {
-				  for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
+
 				  Limit_Switch[X_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MIN].Port, Limit_Switch[X_LIMIT_MIN].pinNumber);
-			  }
 			     Limit_Switch[X_LIMIT_MIN].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Limit_Switch[X_LIMIT_MIN].pinNumber;
 		  }
 		  else if(GPIO_Pin == Limit_Switch[Y_LIMIT_MAX].pinNumber)
 		  {
-			  if ((HAL_GetTick () - Limit_Switch[Y_LIMIT_MAX].millis_time) > 5)
+			  if ((HAL_GetTick () - Limit_Switch[Y_LIMIT_MAX].millis_time) < 5)
 			  {
-
-				  Limit_Switch[Y_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MAX].Port, Limit_Switch[Y_LIMIT_MAX].pinNumber);
+				  //for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
+				  TM_DelayMillis(5);
 
 			  }
-			  else
-			  {
-				  for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
+
 				  Limit_Switch[Y_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MAX].Port, Limit_Switch[Y_LIMIT_MAX].pinNumber);
-			  }
 			     Limit_Switch[Y_LIMIT_MAX].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Limit_Switch[Y_LIMIT_MAX].pinNumber;
 		  }
@@ -156,19 +175,17 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 			  if ((HAL_GetTick () - Limit_Switch[Y_LIMIT_MIN].millis_time) > 5)
 			  {
 
-				  Limit_Switch[Y_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MIN].Port, Limit_Switch[Y_LIMIT_MIN].pinNumber);
+				  //for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
+				  TM_DelayMillis(5);
+			  }
 
-			  }
-			  else
-			  {
-				  for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
 				  Limit_Switch[Y_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MIN].Port, Limit_Switch[Y_LIMIT_MIN].pinNumber);
-			  }
 			     Limit_Switch[Y_LIMIT_MIN].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Limit_Switch[Y_LIMIT_MIN].pinNumber;
 		  }
 
 }
+
 
 
 void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef *hadc)
@@ -198,6 +215,7 @@ void cppmain (void)
   init_Joystick ();
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&adc_buff, NUM_OF_ADC_CHANNELS);
+  TM_Delay_Init();
 
   while (1)
     {

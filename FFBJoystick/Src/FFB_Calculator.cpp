@@ -271,7 +271,7 @@ else
   switch (effect.effectType)
     {
     case USB_EFFECT_CONSTANT: //1
-    		force = -1.5 * ConstantForceCalculator (effect) * angle_ratio * _gains.constantGain;
+    		force = -1.7 * ConstantForceCalculator (effect) * angle_ratio * _gains.constantGain;
 
     		setConstantFilter(axis);
     		if (cfFilter_f < calcfrequency / 2)
@@ -308,7 +308,7 @@ else
    	case USB_EFFECT_DAMPER://9
 
    			setDamperFilter(axis);
-   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.25f;	//.0625f;
+   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.21f;	//.0625f;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
    		   force = ConditionForceCalculator(effect, metric, 0.5f , condition) * angle_ratio * _gains.damperGain;
 
@@ -323,7 +323,7 @@ else
    			{
    				force =  ConditionForceCalculator(effect, abs(metric), 0.50f, condition) * angle_ratio * _gains.inertiaGain;
    			}
-   			else if (_effect_params.frictionPositionChange > 0)
+   			else if ( _effect_params.frictionPositionChange > 0)
    			{
 					force =  -1 *  ConditionForceCalculator(effect, abs(metric), 0.50f, condition) * angle_ratio * _gains.inertiaGain;
 				}
@@ -335,7 +335,7 @@ else
    			setFrictionFilter(axis);
    			metric = FrictionFilterLp[axis]->process(_effect_params.frictionPositionChange) * 0.25f;	//.25;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   			force = ConditionForceCalculator(effect, metric , 0.35f, condition) * angle_ratio * _gains.frictionGain;
+   			force = ConditionForceCalculator(effect, metric , 0.40f, condition) * angle_ratio * _gains.frictionGain;
    			//printf("Friction: M: %f, F: %ld\n", metric, force);
    			break;
 #else

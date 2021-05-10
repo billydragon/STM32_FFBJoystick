@@ -58,6 +58,9 @@ extern "C"
 	long map (long x, long in_min, long in_max, long out_min, long out_max);
 	uint32_t micros (); // Returns microsecond scaled time
 	void delay_us (uint16_t us);
+	void TM_Delay_Init(void);
+	void TM_DelayMicros(uint32_t micros);
+	void TM_DelayMillis(uint32_t millis);
 
 
 

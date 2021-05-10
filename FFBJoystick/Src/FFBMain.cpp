@@ -247,11 +247,61 @@ void Update_Encoder_Axis(int32_t * tempForce)
 }
 
 
+void Update_Buttons()
+{
+	int HatButtonState = -1;
+
+			if(HatButtons[0].CurrentState)
+			{
+				HatButtonState = 0;
+
+			}
+			else if(HatButtons[1].CurrentState)
+			{
+				HatButtonState = 90;
+
+			}
+			else if(HatButtons[2].CurrentState)
+			{
+				HatButtonState = 270;
+
+			}
+			else if(HatButtons[3].CurrentState)
+			{
+				HatButtonState = 180;
+
+			}
+
+			for(int b = 6 ; b < ENC_PUSH_BUTTON ; b++)
+				 {
+					 if(HatButtonState != -1)
+					 {
+						 Buttons[ENC_PUSH_BUTTON].CurrentState = 0;
+						 Buttons[b].CurrentState = 0;
+					 }
+				 }
+
+				Joystick.setHatSwitch(0,HatButtonState);
+
+			//Send buttons report to host
+			for (int i = 0; i < NUM_OF_BUTTONS; i++)
+				 {
+
+					if (Buttons[i].LastState != Buttons[i].CurrentState)
+					{
+						Buttons[i].LastState = Buttons[i].CurrentState;
+					  Joystick.setButton (i, Buttons[i].CurrentState);
+					}
+				 }
+
+}
+
 
 void start_joystick ()
 {
 
 	int32_t _tempforce[2] = { 0, 0};
+
 	if(RunFirstTime == true)
 	{
 			if(config.SysConfig.AppConfig.Auto_Calibration ==1)
@@ -272,41 +322,15 @@ void start_joystick ()
 			RunFirstTime = false;
 	}
 
-		for (int i = 0; i < NUM_OF_BUTTONS; i++)
-		    {
 
-		      if (Buttons[i].LastState != Buttons[i].CurrentState)
-				{
-		      	Buttons[i].LastState = Buttons[i].CurrentState;
-				  Joystick.setButton (i, Buttons[i].CurrentState);
-				}
-		    }
-
-		if(HatButtons[0].CurrentState)
-		{
-			Joystick.setHatSwitch(0,0);
-		}
-		else if(HatButtons[1].CurrentState)
-		{
-			Joystick.setHatSwitch(0,90);
-		}
-		else if(HatButtons[2].CurrentState)
-		{
-			Joystick.setHatSwitch(0,270);
-		}
-		else if(HatButtons[3].CurrentState)
-		{
-			Joystick.setHatSwitch(0,180);
-		}
-		else
-			Joystick.setHatSwitch(0,-1);
-
+	   Update_Buttons();
 
 		Update_Analog_Axis();
 
 	   Update_Encoder_Axis(_tempforce);
 
 	   SetEffects();
+
 		Set_Gains();
 
 		getForce (xy_forces);
@@ -328,6 +352,7 @@ void start_joystick ()
 	 xy_forces[Y_AXIS] = constrain(xy_forces[Y_AXIS], -32767,32767);
 
 	 Motors.SetMotorOutput(xy_forces);
+
 	 Send_Debug_Report();
 
 }
@@ -355,7 +380,6 @@ void Send_Debug_Report()
 				}
 
 		}
-
 
 }
 
@@ -405,6 +429,8 @@ void Set_RunFirstTime_state(bool state)
 	RunFirstTime = state;
 
 }
+
+
 void AutoCalibration(uint8_t idx)
 {
 
@@ -426,18 +452,20 @@ float AutoCenter_spring(uint8_t ax)
 
 	float tempforce = 0;
 	int32_t deadband = config.SysConfig.AC_MotorSettings[ax].Dead_Zone;
-	float Coefficient = 10000;
+	//float Coefficient = 10000;
 	encoder.Update_Metric_By_Time(ax);
 	if(encoder.axis[ax].current_Position < -deadband)
 	{
-		tempforce = (encoder.axis[ax].current_Position + deadband) * Coefficient * 0.0004f * gain[ax].springGain/255;
+		tempforce = (encoder.axis[ax].current_Position + deadband)  * 3.0f * gain[ax].springGain/255;
 
 	}
 	else if(encoder.axis[ax].current_Position > deadband)
 	{
-		tempforce = (encoder.axis[ax].current_Position - deadband) * Coefficient * 0.0004f * gain[ax].springGain/255;
+		tempforce = (encoder.axis[ax].current_Position - deadband)  * 3.0f * gain[ax].springGain/255;
 	}
-	tempforce += encoder.axis[ax].current_Speed * Coefficient * 0.00027f * gain[ax].damperGain /255;
+	tempforce += encoder.axis[ax].current_Speed  * 2.0f * gain[ax].damperGain /255;
+	tempforce += encoder.axis[ax].position_Changed  * 4.0f * gain[ax].frictionGain /255;
+
 	tempforce = -constrain(tempforce, -32767, 32767);
 	return tempforce;
 }

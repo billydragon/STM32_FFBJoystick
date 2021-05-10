@@ -64,6 +64,9 @@ extern "C"
 #define NUM_OF_BUTTONS			16
 #define NUM_OF_EXTI				12
 #define NUM_OF_HATSWITCH		1
+#define ENC_PUSH_BUTTON			10
+
+
 #define ENCODER_MAX			 	1000000 		//-32767
 #define ENCODER_MIN			  	-1000000		//32767
 
@@ -75,7 +78,7 @@ extern "C"
 #define XY_FORCE_MAX			32767
 #define XY_FORCE_MIN			-32767
 
-#define DEBOUNCE_TIME		   15
+#define DEBOUNCE_TIME		   10
 
 #define REPORT_FORCES_DATA		0x01
 #define REPORT_JOYSTICK_DATA	0x02
@@ -118,6 +121,7 @@ typedef struct //PID state
   void findCenter_Auto();
   void Update_Encoder_Axis(int32_t * tempForce);
   void Update_Analog_Axis(void);
+  void Update_Buttons(void);
   void Correct_Joystick_Positions(int axis_num, int32_t targetPosition);
   float AutoCenter_spring(uint8_t ax);
 

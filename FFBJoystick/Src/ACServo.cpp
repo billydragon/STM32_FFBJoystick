@@ -62,9 +62,9 @@ void ACServo::set_motor_dac(int32_t * _xy_forces)
 		int32_t y_torque_min = map(config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Min_Torque,MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 		int32_t y_torque_max = map(config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Torque,MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 
-
-		float SPEED_SCALE_X = 0.65f;//config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Speed/config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Torque;
-		float SPEED_SCALE_Y = 0.65f;//config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Speed/config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Torque;
+		//0.65f;
+		float SPEED_SCALE_X = (float)config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Speed/(float)config.SysConfig.AC_MotorSettings[X_AXIS].Motor_Max_Torque;
+		float SPEED_SCALE_Y = (float)config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Speed/(float)config.SysConfig.AC_MotorSettings[Y_AXIS].Motor_Max_Torque;
 		//Speed X . Torque X
 		 if(_xy_forces[X_AXIS] - x_force_dead_zone > 0)
 		//if(_xy_forces[X_AXIS] > 0)
