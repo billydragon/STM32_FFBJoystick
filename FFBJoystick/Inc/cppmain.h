@@ -41,7 +41,6 @@ extern "C"
 #include "stdlib.h"
 #include "string.h"
 #include "math.h"
-#include "adc.h"
 #include "dma.h"
 #include "spi.h"
 #include "tim.h"
@@ -51,6 +50,9 @@ extern "C"
 #include "usbd_def.h"
 #include "cmsis_compiler.h"
 
+#if(NUM_OF_ADC_CHANNELS)
+#include "adc.h"
+#endif
 
 	extern uint8_t * JoystickHIDReportDescr;
 	extern uint16_t  JoystickHIDReportDescr_Size;
@@ -61,7 +63,8 @@ extern "C"
 	void TM_Delay_Init(void);
 	void TM_DelayMicros(uint32_t micros);
 	void TM_DelayMillis(uint32_t millis);
-
+	int32_t getEncoder_TIM2 ();
+	void setEncoder_TIM2 (int32_t val);
 
 
 #ifdef __cplusplus

@@ -58,9 +58,6 @@ void Error_Handler(void);
 /* USER CODE END EFP */
 
 /* Private defines -----------------------------------------------------------*/
-#define JBUTTON2_Pin GPIO_PIN_2
-#define JBUTTON2_GPIO_Port GPIOE
-#define JBUTTON2_EXTI_IRQn EXTI2_IRQn
 #define JBUTTON4_Pin GPIO_PIN_4
 #define JBUTTON4_GPIO_Port GPIOE
 #define JBUTTON4_EXTI_IRQn EXTI4_IRQn
@@ -70,11 +67,20 @@ void Error_Handler(void);
 #define JBUTTON6_Pin GPIO_PIN_6
 #define JBUTTON6_GPIO_Port GPIOE
 #define JBUTTON6_EXTI_IRQn EXTI9_5_IRQn
+#define JBUTTON0_Pin GPIO_PIN_0
+#define JBUTTON0_GPIO_Port GPIOC
+#define JBUTTON0_EXTI_IRQn EXTI0_IRQn
+#define JBUTTON1_Pin GPIO_PIN_1
+#define JBUTTON1_GPIO_Port GPIOC
+#define JBUTTON1_EXTI_IRQn EXTI1_IRQn
+#define JBUTTON2_Pin GPIO_PIN_2
+#define JBUTTON2_GPIO_Port GPIOC
+#define JBUTTON2_EXTI_IRQn EXTI2_IRQn
+#define JBUTTON3_Pin GPIO_PIN_3
+#define JBUTTON3_GPIO_Port GPIOC
+#define JBUTTON3_EXTI_IRQn EXTI3_IRQn
 #define USER_BUTTON_Pin GPIO_PIN_0
 #define USER_BUTTON_GPIO_Port GPIOA
-#define JBUTTON1_Pin GPIO_PIN_1
-#define JBUTTON1_GPIO_Port GPIOA
-#define JBUTTON1_EXTI_IRQn EXTI1_IRQn
 #define SPI1_CS1_Pin GPIO_PIN_4
 #define SPI1_CS1_GPIO_Port GPIOA
 #define SPI1_CS2_Pin GPIO_PIN_4
@@ -129,11 +135,9 @@ void Error_Handler(void);
 #define JBUTTON10_Pin GPIO_PIN_10
 #define JBUTTON10_GPIO_Port GPIOC
 #define JBUTTON10_EXTI_IRQn EXTI15_10_IRQn
-#define JBUTTON3_Pin GPIO_PIN_11
-#define JBUTTON3_GPIO_Port GPIOC
-#define JBUTTON3_EXTI_IRQn EXTI15_10_IRQn
-#define JBUTTON0_Pin GPIO_PIN_0
-#define JBUTTON0_GPIO_Port GPIOD
+#define JBUTTON11_Pin GPIO_PIN_11
+#define JBUTTON11_GPIO_Port GPIOC
+#define JBUTTON11_EXTI_IRQn EXTI15_10_IRQn
 /* USER CODE BEGIN Private defines */
 
 /* USER CODE END Private defines */

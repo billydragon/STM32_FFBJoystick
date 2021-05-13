@@ -15,9 +15,15 @@ uint8_t * JoystickHIDReportDescr;
 uint16_t  JoystickHIDReportDescr_Size;
 
 extern QEncoder encoder;
-extern MotorDriver Motors;
-extern int32_t xy_forces[2];
+//extern MotorDriver Motors;
+//extern int32_t xy_forces[2];
 extern volatile bool RunFirstTime;
+
+#if(0)
+uint8_t a,b,ab,c;
+uint8_t pre_ab = 0;
+extern int16_t JEncoder_count;
+#endif
 
 void LimitSwitch_trig(uint16_t GPIO_Pin);
 
@@ -62,15 +68,14 @@ void TM_DelayMillis(uint32_t millis) {
 
 void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 {
-
 	uint8_t bState = 0;
   //JBUTTON0 - JBUTTON11
-	for (int i = 0; i < NUM_OF_EXTI; i++)
+	for (int i = 0; i < NUM_OF_EXTI_BUTTONS; i++)
 	{
 
 		if (GPIO_Pin == Buttons[i].pinNumber)
 		    {
-			__disable_irq ();
+			//__disable_irq ();
 					bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
 				  if ((HAL_GetTick () - Buttons[i].millis_time) < DEBOUNCE_TIME)
 					 {
@@ -78,40 +83,82 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 					  bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
 					 }
 
-				  if(i > 5 && i < ENC_PUSH_BUTTON)	// Left stick buttons
+				  if(i > HAT_START_PIN - 1 && i <= HAT_END_PIN)	// Left stick buttons
 				  {
 					  //TM_DelayMillis(100);
-					  if(bState & !HAL_GPIO_ReadPin (Buttons[ENC_PUSH_BUTTON].Port, Buttons[ENC_PUSH_BUTTON].pinNumber))
+					  if(bState & !HAL_GPIO_ReadPin (Buttons[JOYSTICK_PUSHBUTTON_A].Port, Buttons[JOYSTICK_PUSHBUTTON_A].pinNumber))
 					  {
 						  Buttons[i].CurrentState = 0;
-						  Buttons[ENC_PUSH_BUTTON].CurrentState = 0;
-						  HatButtons[i - 6].CurrentState = bState;
+						  Buttons[JOYSTICK_PUSHBUTTON_A].CurrentState = 0;
+						  HatButtons[i - HAT_START_PIN].CurrentState = bState;
 					  }
 					  else
 					  {
-						  HatButtons[i - 6].CurrentState = 0;
+						  HatButtons[i - HAT_START_PIN].CurrentState = 0;
 						  Buttons[i].CurrentState = bState;
 					  }
 
 				  }
-				  else if (i == ENC_PUSH_BUTTON)
+				  else if (i == JOYSTICK_PUSHBUTTON_A)
 				  {
-					  Buttons[ENC_PUSH_BUTTON].CurrentState = bState;
+					  Buttons[JOYSTICK_PUSHBUTTON_A].CurrentState = bState;
 					  for (int h = 0; h < 4 ; h++)
 					  {
-						  if ((HatButtons[h].CurrentState) || (Buttons[h + 6].CurrentState))
+						  if ((HatButtons[h].CurrentState) || (Buttons[h + HAT_START_PIN].CurrentState))
 						  {
-							  Buttons[ENC_PUSH_BUTTON].CurrentState = 0;
+							  Buttons[JOYSTICK_PUSHBUTTON_A].CurrentState = 0;
 						  }
 					  }
 				  }
+#if(0)
+				  else if (i == JENC_PINA)
+				  {
+						  a=  HAL_GPIO_ReadPin(JBUTTON10_GPIO_Port, JBUTTON10_Pin);
+						  ab = b << 1 | a;
+					  	  c= ab << 2 | pre_ab;
+					  	  pre_ab = ab;
+
+					  	if((c % 5) !=0)
+					  	{
+					  		c = c | 0x06;
+					  		if((c % 3) == 0)
+					  		{
+
+					  			JEncoder_count +=1;
+					  			if(JEncoder_count == 2)
+					  			{
+					  				JEncoder_count = 0;
+					  				Buttons[JENC_PINA].CurrentState = 1;
+
+					  			}
+					  		}
+					  		else
+					  		{
+					  			JEncoder_count -=1;
+					  			if(JEncoder_count == -2)
+								{
+									JEncoder_count = 0;
+									Buttons[JENC_PINB].CurrentState = 1;
+
+								}
+					  		}
+
+					  	}
+
+				  }
+				  else if (i == JENC_PINB)
+				  {
+					  b = HAL_GPIO_ReadPin(JBUTTON11_GPIO_Port, JBUTTON11_Pin);
+
+				  }
+#endif
+
 				  else
 				  {
 					  Buttons[i].CurrentState = bState;
 				  }
-				 __enable_irq();
+				 //__enable_irq();
 
-				  //Buttons[i].CurrentState = bState;
 				  Buttons[i].millis_time = HAL_GetTick ();
 				  EXTI->PR |= Buttons[i].pinNumber;
 
@@ -119,14 +166,14 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 
 	}
 
-
   if(RunFirstTime == true)
   		{
-	  LimitSwitch_trig(GPIO_Pin);
+		  LimitSwitch_trig(GPIO_Pin);
   		}
 
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 }
+
 
 void LimitSwitch_trig(uint16_t GPIO_Pin)
 {
@@ -135,7 +182,6 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 		  {
 			  if ((HAL_GetTick () - Limit_Switch[X_LIMIT_MAX].millis_time) < 5)
 			  {
-				  //for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
 				  TM_DelayMillis(5);
 			  }
 
@@ -148,7 +194,6 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 		  {
 			  if ((HAL_GetTick () - Limit_Switch[X_LIMIT_MIN].millis_time) < 5)
 			  {
-				  //for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
 				  TM_DelayMillis(5);
 
 			  }
@@ -161,7 +206,6 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 		  {
 			  if ((HAL_GetTick () - Limit_Switch[Y_LIMIT_MAX].millis_time) < 5)
 			  {
-				  //for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
 				  TM_DelayMillis(5);
 
 			  }
@@ -175,7 +219,6 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 			  if ((HAL_GetTick () - Limit_Switch[Y_LIMIT_MIN].millis_time) > 5)
 			  {
 
-				  //for(int d = 0; d < 5000; d++) { __ASM volatile ("NOP"); }
 				  TM_DelayMillis(5);
 			  }
 
@@ -187,6 +230,7 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 }
 
 
+#if(NUM_OF_ADC_CHANNELS)
 
 void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef *hadc)
 {
@@ -196,8 +240,27 @@ void HAL_ADC_ConvCpltCallback (ADC_HandleTypeDef *hadc)
 											  analog_axis[RY_AXIS].minValue, analog_axis[RY_AXIS].maxValue);
 }
 
+#endif
 
 
+int32_t getEncoder_TIM2 ()
+{
+  int32_t timpos = 0;
+  int32_t result = 0;
+
+      timpos = TIM2->CNT - (int32_t) 0x7FFFFFFF;
+      result = timpos + Encoder_TIM2_Counter;
+
+  return result;
+}
+
+void setEncoder_TIM2 (int32_t val)
+{
+
+	Encoder_TIM2_Counter = val;
+   TIM2->CNT = val + 0x7FFFFFFF;
+
+}
 
 void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
 {
@@ -206,15 +269,42 @@ void HAL_TIM_PeriodElapsedCallback (TIM_HandleTypeDef *htim)
       encoder.timerElapsed (htim);
     }
 
+
+  if (htim->Instance == TIM2)
+	  {
+	  if ((TIM2->CR1 >> 4 & 0x01) == 0) 			//DIR==0
+	    //if(TIM3->CNT > TIM3->ARR/2)
+	      {
+		  Encoder_TIM2_Counter += TIM2->ARR / 2;
+	      }
+	    else if ((TIM2->CR1 >> 4 & 0x01) == 1)		//DIR==1
+	      {
+	   	 Encoder_TIM2_Counter -= TIM2->ARR / 2;
+	      }
+
+	    TIM2->CNT = 0x7FFFFFFF;
+	    __HAL_TIM_CLEAR_IT(&htim2, TIM_IT_UPDATE);
+	  }
+
 }
 
 void cppmain (void)
 {
 	//printf("STM32 FFBJoystick v100.100.\n Starting initial device...\n");
+	 /**TIM2 GPIO Configuration
+	    PA1     ------> TIM2_CH2
+	    PA15     ------> TIM2_CH1
+	    */
+	HAL_TIM_Encoder_Start (&htim2, TIM_CHANNEL_1 | TIM_CHANNEL_2);
+	HAL_TIM_Base_Start_IT (&htim2);
 
+	setEncoder_TIM2(0);
   init_Joystick ();
+
+#if(NUM_OF_ADC_CHANNELS)
   HAL_ADC_Start(&hadc1);
   HAL_ADC_Start_DMA(&hadc1, (uint32_t*)&adc_buff, NUM_OF_ADC_CHANNELS);
+#endif
   TM_Delay_Init();
 
   while (1)

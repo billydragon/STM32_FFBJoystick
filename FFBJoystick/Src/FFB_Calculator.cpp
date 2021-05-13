@@ -302,15 +302,15 @@ else
     case USB_EFFECT_SPRING://8
    			metric = _effect_params.springPosition;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   			force = ConditionForceCalculator(effect, metric, 0.00025f, condition) * angle_ratio * _gains.springGain;
+   			force = ConditionForceCalculator(effect, metric, 0.00021f, condition) * angle_ratio * _gains.springGain;
    			//printf("Spring: M: %f, F: %ld \n", metric, force);
    		break;
    	case USB_EFFECT_DAMPER://9
 
    			setDamperFilter(axis);
-   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.21f;	//.0625f;
+   			metric = DamperFilterLp[axis]->process(_effect_params.damperVelocity) * 0.12f;	//.0625f;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   		   force = ConditionForceCalculator(effect, metric, 0.5f , condition) * angle_ratio * _gains.damperGain;
+   		   force = ConditionForceCalculator(effect, metric, 0.30f , condition) * angle_ratio * _gains.damperGain;
 
    		   //printf("Damper: M: %f, F: %ld\n", metric, force);
    		break;

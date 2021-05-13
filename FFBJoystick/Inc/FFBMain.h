@@ -17,6 +17,9 @@ extern "C"
 #ifdef __cplusplus
 }
 #endif
+
+#include "stdbool.h"
+
   struct __attribute__((packed)) TDF_AXIS
   {
     //volatile uint32_t cPR;
@@ -46,8 +49,8 @@ extern "C"
     volatile uint32_t millis_time;
   };
 
-#define X_AXIS					0
-#define Y_AXIS					1
+#define X_AXIS						0
+#define Y_AXIS						1
 #define RX_AXIS					0
 #define RY_AXIS					1
 
@@ -56,15 +59,20 @@ extern "C"
 #define Y_LIMIT_MAX				2
 #define Y_LIMIT_MIN				3
 
-#define NUM_OF_ADC_CHANNELS		6
-#define NUM_OF_ENC_AXIS			2
+#define NUM_OF_ADC_CHANNELS	0
 #define NUM_OF_ANALOG_AXIS		2
 
+#define NUM_OF_ENC_AXIS			2
 #define NUM_OF_LIMITSWITCH		4
 #define NUM_OF_BUTTONS			16
-#define NUM_OF_EXTI				12
+#define NUM_OF_EXTI_BUTTONS	12
 #define NUM_OF_HATSWITCH		1
-#define ENC_PUSH_BUTTON			10
+#define HAT_START_PIN			5
+#define HAT_END_PIN				8
+#define JOYSTICK_PUSHBUTTON_A	9
+#define JOYSTICK_PUSHBUTTON_B	4
+#define JENC_PINA					10
+#define JENC_PINB					11
 
 
 #define ENCODER_MAX			 	1000000 		//-32767
@@ -78,7 +86,7 @@ extern "C"
 #define XY_FORCE_MAX			32767
 #define XY_FORCE_MIN			-32767
 
-#define DEBOUNCE_TIME		   10
+#define DEBOUNCE_TIME		   15
 
 #define REPORT_FORCES_DATA		0x01
 #define REPORT_JOYSTICK_DATA	0x02
@@ -101,12 +109,19 @@ typedef struct //PID state
 	int32_t axis_max[2];
 } USB_LoggerReport_t;
 
-  extern TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS];
+
   extern TDF_BUTTON Buttons[NUM_OF_BUTTONS];
   extern TDF_BUTTON HatButtons[4];
-  extern uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
   extern TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
+  extern int16_t JEncoder_count;
+  extern int32_t Encoder_TIM2_Counter;
   extern TDF_BUTTON Estop_Sw;
+
+#if(NUM_OF_ADC_CHANNELS)
+  extern uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
+  extern TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS];
+
+#endif
 
   void init_Joystick();
   void start_joystick(void);
@@ -119,9 +134,7 @@ typedef struct //PID state
   void Set_RunFirstTime_state(bool state);
   void Send_Debug_Report();
   void findCenter_Auto();
-  void Update_Encoder_Axis(int32_t * tempForce);
-  void Update_Analog_Axis(void);
-  void Update_Buttons(void);
+
   void Correct_Joystick_Positions(int axis_num, int32_t targetPosition);
   float AutoCenter_spring(uint8_t ax);
 

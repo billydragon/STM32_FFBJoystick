@@ -19,7 +19,7 @@ extern PIDReportHandler pidReportHandler;
 Gains gain[2] __attribute__((section("ccmram")));
 EffectParams effects[2]  __attribute__((section("ccmram")));
 int32_t xy_forces[2]  __attribute__((section("ccmram"))) = { 0 };
-TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS]  __attribute__((section("ccmram")));
+
 FFBConfig config  __attribute__((section("ccmram")));
 QEncoder encoder  __attribute__((section("ccmram")));
 MotorDriver Motors  __attribute__((section("ccmram")));
@@ -27,15 +27,23 @@ MotorDriver Motors  __attribute__((section("ccmram")));
 TDF_BUTTON Buttons[NUM_OF_BUTTONS];
 TDF_BUTTON HatButtons[4];
 TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
+int16_t JEncoder_count;
+int32_t Encoder_TIM2_Counter;
 
 TDF_BUTTON Estop_Sw;
-
-uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
 USB_LoggerReport_t USBLog;
 
 uint32_t USBLog_timer =0;
 volatile bool RunFirstTime = true;
 
+#if(NUM_OF_ADC_CHANNELS)
+TDF_AXIS analog_axis[NUM_OF_ANALOG_AXIS]  __attribute__((section("ccmram")));
+uint16_t adc_buff[NUM_OF_ADC_CHANNELS];
+void Update_Analog_Axis(void);
+#endif
+
+void Update_Encoder_Axis(int32_t * tempForce);
+void Update_Buttons(void);
 
 #define GOBACK_KP		3.00f
 #define GOBACK_KI		0.1f
@@ -78,11 +86,12 @@ void Set_PID_Turnings()
 
 void init_Joystick ()
 {
-
+  JEncoder_count = 0;
   config.begin ();
   InitBiquadLp();
   Set_PID_Turnings();
 
+#if(NUM_OF_ADC_CHANNELS)
   for (int i = 0; i < NUM_OF_ANALOG_AXIS; i++)
     {
       analog_axis[i].current_Position = 0;
@@ -96,6 +105,7 @@ void init_Joystick ()
 	  analog_axis[i].maxValue = ADC_AXIS_MAX;
 
     }
+#endif
 
 	Buttons[0].pinNumber = JBUTTON0_Pin;
 	Buttons[0].Port = JBUTTON0_GPIO_Port;
@@ -130,7 +140,8 @@ void init_Joystick ()
 	Buttons[10].pinNumber = JBUTTON10_Pin;
 	Buttons[10].Port = JBUTTON10_GPIO_Port;
 
-
+	Buttons[11].pinNumber = JBUTTON10_Pin;
+	Buttons[11].Port = JBUTTON10_GPIO_Port;
 
 
   Limit_Switch[X_LIMIT_MAX].pinNumber = X_LIMIT_MAX_Pin;
@@ -143,20 +154,22 @@ void init_Joystick ()
   Limit_Switch[Y_LIMIT_MIN].pinNumber = Y_LIMIT_MIN_Pin;
   Limit_Switch[Y_LIMIT_MIN].Port = Y_LIMIT_MIN_GPIO_Port;
 
-
   encoder.Begin ();
 
   Joystick.setXAxisRange(encoder.axis[X_AXIS].minValue, encoder.axis[X_AXIS].maxValue);
   Joystick.setYAxisRange(encoder.axis[Y_AXIS].minValue, encoder.axis[Y_AXIS].maxValue);
+
+#if(NUM_OF_ADC_CHANNELS)
   Joystick.setRxAxisRange(analog_axis[RX_AXIS].minValue, analog_axis[RX_AXIS].maxValue);
   Joystick.setRyAxisRange(analog_axis[RY_AXIS].minValue, analog_axis[RY_AXIS].maxValue);
+#endif
 
   Joystick.begin (true);
   Motors.Init();
 
 }
 
-
+#if(NUM_OF_ADC_CHANNELS)
 void Update_Analog_Axis()
 {
 			if (analog_axis[RX_AXIS].current_Position > analog_axis[RX_AXIS].maxValue)
@@ -188,7 +201,7 @@ void Update_Analog_Axis()
 		    }
 
 }
-
+#endif
 
 void Update_Encoder_Axis(int32_t * tempForce)
 {
@@ -263,25 +276,60 @@ void Update_Buttons()
 			}
 			else if(HatButtons[2].CurrentState)
 			{
-				HatButtonState = 270;
+				HatButtonState = 180;
 
 			}
 			else if(HatButtons[3].CurrentState)
 			{
-				HatButtonState = 180;
+				HatButtonState = 270;
 
 			}
 
-			for(int b = 6 ; b < ENC_PUSH_BUTTON ; b++)
-				 {
-					 if(HatButtonState != -1)
-					 {
-						 Buttons[ENC_PUSH_BUTTON].CurrentState = 0;
-						 Buttons[b].CurrentState = 0;
-					 }
-				 }
-
 				Joystick.setHatSwitch(0,HatButtonState);
+#if(0)
+				if(Buttons[JENC_PINA].CurrentState)
+				{
+					if((HAL_GetTick() - Buttons[JENC_PINA].millis_time) > 50)
+					{
+						Buttons[JENC_PINA].CurrentState = 0;
+
+					}
+				}
+
+				if(Buttons[JENC_PINB].CurrentState)
+				{
+					if((HAL_GetTick() - Buttons[JENC_PINB].millis_time) > 50)
+					{
+						Buttons[JENC_PINB].CurrentState = 0;
+
+					}
+				}
+#endif
+				int32_t jEncoder = getEncoder_TIM2();
+
+				if(jEncoder >= 2)
+				{
+					Buttons[15].CurrentState = 1;
+					Buttons[15].millis_time = HAL_GetTick();
+					setEncoder_TIM2(0);
+				}
+				else if(jEncoder <= -2)
+				{
+					Buttons[14].CurrentState = 1;
+					Buttons[14].millis_time = HAL_GetTick();
+					setEncoder_TIM2(0);
+				}
+
+				for(int e = 14; e < 16; e++)
+				{
+
+							if((HAL_GetTick() - Buttons[e].millis_time) > 50)
+							{
+								Buttons[e].CurrentState = 0;
+
+							}
+
+				}
 
 			//Send buttons report to host
 			for (int i = 0; i < NUM_OF_BUTTONS; i++)
@@ -325,7 +373,9 @@ void start_joystick ()
 
 	   Update_Buttons();
 
+#if(NUM_OF_ADC_CHANNELS)
 		Update_Analog_Axis();
+#endif
 
 	   Update_Encoder_Axis(_tempforce);
 
@@ -344,6 +394,16 @@ void start_joystick ()
 
 		 }
     }
+
+	 if(pidReportHandler.FFB_Active == false)
+	 {
+		 HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+
+	 }
+	 else
+	 {
+		 HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+	 }
 
 	 xy_forces[X_AXIS] += _tempforce[X_AXIS];
 	 xy_forces[Y_AXIS] += _tempforce[Y_AXIS];
@@ -399,14 +459,14 @@ void SetEffects() //Test
 				 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
 				 effects[ax].damperMaxVelocity = encoder.axis[ax].maxValue;
 #else		//Active for calculate FFB by Time
-			    effects[ax].springPosition = encoder.axis[ax].current_Position;
-		 		 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
-		 		 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed; //lastX - posX;
-		 		 effects[ax].frictionMaxPositionChange = encoder.axis[ax].maxValue;
-		 		 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration;
-		 		 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].max_Acceleration;
-		 		 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
-		 		 effects[ax].damperMaxVelocity = encoder.axis[ax].max_Speed;
+				 effects[ax].springPosition = encoder.axis[ax].current_Position;
+				 effects[ax].springMaxPosition = encoder.axis[ax].maxValue;
+				 effects[ax].frictionPositionChange = encoder.axis[ax].position_Changed; //lastX - posX;
+				 effects[ax].frictionMaxPositionChange = encoder.axis[ax].maxValue;
+				 effects[ax].inertiaAcceleration = encoder.axis[ax].current_Acceleration;
+				 effects[ax].inertiaMaxAcceleration = encoder.axis[ax].max_Acceleration;
+				 effects[ax].damperVelocity = encoder.axis[ax].current_Speed;
+				 effects[ax].damperMaxVelocity = encoder.axis[ax].max_Speed;
 #endif
 
 	}
@@ -451,23 +511,23 @@ float AutoCenter_spring(uint8_t ax)
 {
 
 	float tempforce = 0;
-	int32_t deadband = config.SysConfig.AC_MotorSettings[ax].Dead_Zone;
-	//float Coefficient = 10000;
-	encoder.Update_Metric_By_Time(ax);
-	if(encoder.axis[ax].current_Position < -deadband)
-	{
-		tempforce = (encoder.axis[ax].current_Position + deadband)  * 3.0f * gain[ax].springGain/255;
+		int32_t deadband = config.SysConfig.AC_MotorSettings[ax].Dead_Zone;
+		//float Coefficient = 10000;
+		encoder.Update_Metric_By_Time(ax);
+		if(encoder.axis[ax].current_Position < -deadband)
+		{
+			tempforce = (encoder.axis[ax].current_Position + deadband)  * 2.0f * gain[ax].springGain/255;
 
-	}
-	else if(encoder.axis[ax].current_Position > deadband)
-	{
-		tempforce = (encoder.axis[ax].current_Position - deadband)  * 3.0f * gain[ax].springGain/255;
-	}
-	tempforce += encoder.axis[ax].current_Speed  * 2.0f * gain[ax].damperGain /255;
-	tempforce += encoder.axis[ax].position_Changed  * 4.0f * gain[ax].frictionGain /255;
+		}
+		else if(encoder.axis[ax].current_Position > deadband)
+		{
+			tempforce = (encoder.axis[ax].current_Position - deadband)  * 2.0f * gain[ax].springGain/255;
+		}
+		tempforce += encoder.axis[ax].current_Speed  * 2.0f * gain[ax].damperGain /255;
+		tempforce += encoder.axis[ax].position_Changed  * 3.0f * gain[ax].frictionGain /255;
 
-	tempforce = -constrain(tempforce, -32767, 32767);
-	return tempforce;
+		tempforce = -constrain(tempforce, -32767, 32767);
+		return tempforce;
 }
 
 void findCenter_Manual(int axis_num)
@@ -564,17 +624,18 @@ void findCenter_Auto()
 	  Motors.MotorDriverOn(X_AXIS);
 	  Motors.MotorDriverOn(Y_AXIS);
 	  HAL_Delay(2000);
-	   Limit_Switch[X_LIMIT_MAX].CurrentState = 0;
+	  Limit_Switch[X_LIMIT_MAX].CurrentState = 0;
 
 		do //X MAX
 		{
 		xy_forces[X_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT, MAX_DAC_OUT_VOLT,0,32767);
 		Motors.SetMotorOutput(xy_forces);
 		encoder.updatePosition(X_AXIS);
-
 		AutoCalibration(X_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[X_LIMIT_MAX].CurrentState == 0);
+
+
 		xy_forces[X_AXIS] = 0;
 		Motors.SetMotorOutput(xy_forces);
 		HAL_Delay(500);
@@ -588,6 +649,7 @@ void findCenter_Auto()
 		AutoCalibration(X_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[X_LIMIT_MIN].CurrentState == 0);
+
 		xy_forces[X_AXIS] = 0;
 		Motors.SetMotorOutput(xy_forces);
 		HAL_Delay(500);
@@ -610,6 +672,7 @@ void findCenter_Auto()
 		Motors.MotorDriverOn(Y_AXIS);
 		Limit_Switch[Y_LIMIT_MAX].CurrentState = 0;
 
+
 		do //Y MAX
 		{
 		xy_forces[Y_AXIS] = map(config.SysConfig.AppConfig.Home_Speed, MIN_DAC_OUT_VOLT,MAX_DAC_OUT_VOLT,0,32767);
@@ -619,6 +682,7 @@ void findCenter_Auto()
 		AutoCalibration(Y_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[Y_LIMIT_MAX].CurrentState == 0);
+
 		xy_forces[Y_AXIS] = 0;
 		Motors.SetMotorOutput(xy_forces);
 		HAL_Delay(500);
@@ -632,6 +696,8 @@ void findCenter_Auto()
 		AutoCalibration(Y_AXIS);
 		Send_Debug_Report();
 		}while (Limit_Switch[Y_LIMIT_MIN].CurrentState == 0);
+
+
 		xy_forces[Y_AXIS] = 0;
 		Motors.SetMotorOutput(xy_forces);
 		HAL_Delay(500);
