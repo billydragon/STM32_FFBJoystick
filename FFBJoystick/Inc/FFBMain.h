@@ -86,7 +86,7 @@ extern "C"
 #define XY_FORCE_MAX			32767
 #define XY_FORCE_MIN			-32767
 
-#define DEBOUNCE_TIME		   15
+#define DEBOUNCE_TIME		   10
 
 #define REPORT_FORCES_DATA		0x01
 #define REPORT_JOYSTICK_DATA	0x02
@@ -113,7 +113,7 @@ typedef struct //PID state
   extern TDF_BUTTON Buttons[NUM_OF_BUTTONS];
   extern TDF_BUTTON HatButtons[4];
   extern TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
-  extern int16_t JEncoder_count;
+
   extern int32_t Encoder_TIM2_Counter;
   extern TDF_BUTTON Estop_Sw;
 

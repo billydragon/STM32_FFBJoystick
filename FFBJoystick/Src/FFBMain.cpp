@@ -27,7 +27,6 @@ MotorDriver Motors  __attribute__((section("ccmram")));
 TDF_BUTTON Buttons[NUM_OF_BUTTONS];
 TDF_BUTTON HatButtons[4];
 TDF_BUTTON Limit_Switch[NUM_OF_LIMITSWITCH];
-int16_t JEncoder_count;
 int32_t Encoder_TIM2_Counter;
 
 TDF_BUTTON Estop_Sw;
@@ -86,7 +85,7 @@ void Set_PID_Turnings()
 
 void init_Joystick ()
 {
-  JEncoder_count = 0;
+
   config.begin ();
   InitBiquadLp();
   Set_PID_Turnings();
@@ -397,12 +396,12 @@ void start_joystick ()
 
 	 if(pidReportHandler.FFB_Active == false)
 	 {
-		 HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_RESET);
+		 HAL_GPIO_WritePin(EXT_LED1_GPIO_Port, EXT_LED1_Pin, GPIO_PIN_SET);
 
 	 }
 	 else
 	 {
-		 HAL_GPIO_WritePin(LED1_GPIO_Port, LED1_Pin, GPIO_PIN_SET);
+		 HAL_GPIO_WritePin(EXT_LED1_GPIO_Port, EXT_LED1_Pin, GPIO_PIN_RESET);
 	 }
 
 	 xy_forces[X_AXIS] += _tempforce[X_AXIS];

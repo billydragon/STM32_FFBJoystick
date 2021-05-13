@@ -93,6 +93,8 @@ void Error_Handler(void);
 #define MOTOR_Y_EN_GPIO_Port GPIOB
 #define MOTOR_X_DIR_Pin GPIO_PIN_2
 #define MOTOR_X_DIR_GPIO_Port GPIOB
+#define EXT_LED1_Pin GPIO_PIN_7
+#define EXT_LED1_GPIO_Port GPIOE
 #define TIM1_PWM1_Pin GPIO_PIN_9
 #define TIM1_PWM1_GPIO_Port GPIOE
 #define TIM1_PWM3_Pin GPIO_PIN_13

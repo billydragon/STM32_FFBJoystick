@@ -19,11 +19,6 @@ extern QEncoder encoder;
 //extern int32_t xy_forces[2];
 extern volatile bool RunFirstTime;
 
-#if(0)
-uint8_t a,b,ab,c;
-uint8_t pre_ab = 0;
-extern int16_t JEncoder_count;
-#endif
 
 void LimitSwitch_trig(uint16_t GPIO_Pin);
 
@@ -68,6 +63,7 @@ void TM_DelayMillis(uint32_t millis) {
 
 void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 {
+	__disable_irq ();
 	uint8_t bState = 0;
   //JBUTTON0 - JBUTTON11
 	for (int i = 0; i < NUM_OF_EXTI_BUTTONS; i++)
@@ -75,10 +71,11 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 
 		if (GPIO_Pin == Buttons[i].pinNumber)
 		    {
-			//__disable_irq ();
+
 					bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
 				  if ((HAL_GetTick () - Buttons[i].millis_time) < DEBOUNCE_TIME)
 					 {
+
 					  TM_DelayMillis(DEBOUNCE_TIME);
 					  bState = !HAL_GPIO_ReadPin (Buttons[i].Port, Buttons[i].pinNumber);
 					 }
@@ -110,57 +107,14 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
 						  }
 					  }
 				  }
-#if(0)
-				  else if (i == JENC_PINA)
-				  {
-						  a=  HAL_GPIO_ReadPin(JBUTTON10_GPIO_Port, JBUTTON10_Pin);
-						  ab = b << 1 | a;
-					  	  c= ab << 2 | pre_ab;
-					  	  pre_ab = ab;
-
-					  	if((c % 5) !=0)
-					  	{
-					  		c = c | 0x06;
-					  		if((c % 3) == 0)
-					  		{
-
-					  			JEncoder_count +=1;
-					  			if(JEncoder_count == 2)
-					  			{
-					  				JEncoder_count = 0;
-					  				Buttons[JENC_PINA].CurrentState = 1;
-
-					  			}
-					  		}
-					  		else
-					  		{
-					  			JEncoder_count -=1;
-					  			if(JEncoder_count == -2)
-								{
-									JEncoder_count = 0;
-									Buttons[JENC_PINB].CurrentState = 1;
-
-								}
-					  		}
-
-					  	}
-
-				  }
-				  else if (i == JENC_PINB)
-				  {
-					  b = HAL_GPIO_ReadPin(JBUTTON11_GPIO_Port, JBUTTON11_Pin);
-
-				  }
-#endif
-
 				  else
 				  {
 					  Buttons[i].CurrentState = bState;
 				  }
-				 //__enable_irq();
+
 
 				  Buttons[i].millis_time = HAL_GetTick ();
-				  EXTI->PR |= Buttons[i].pinNumber;
+				  //EXTI->PR |= Buttons[i].pinNumber;
 
 		    }
 
@@ -172,6 +126,8 @@ void HAL_GPIO_EXTI_Callback (uint16_t GPIO_Pin)
   		}
 
   __HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+
+  __enable_irq();
 }
 
 
@@ -188,7 +144,7 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 				  Limit_Switch[X_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MAX].Port, Limit_Switch[X_LIMIT_MAX].pinNumber);
 
 			     Limit_Switch[X_LIMIT_MAX].millis_time = HAL_GetTick ();
-				  EXTI->PR |= Limit_Switch[X_LIMIT_MAX].pinNumber;
+
 		  }
 		  else if(GPIO_Pin == Limit_Switch[X_LIMIT_MIN].pinNumber)
 		  {
@@ -200,7 +156,7 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 
 				  Limit_Switch[X_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[X_LIMIT_MIN].Port, Limit_Switch[X_LIMIT_MIN].pinNumber);
 			     Limit_Switch[X_LIMIT_MIN].millis_time = HAL_GetTick ();
-				  EXTI->PR |= Limit_Switch[X_LIMIT_MIN].pinNumber;
+
 		  }
 		  else if(GPIO_Pin == Limit_Switch[Y_LIMIT_MAX].pinNumber)
 		  {
@@ -212,7 +168,7 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 
 				  Limit_Switch[Y_LIMIT_MAX].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MAX].Port, Limit_Switch[Y_LIMIT_MAX].pinNumber);
 			     Limit_Switch[Y_LIMIT_MAX].millis_time = HAL_GetTick ();
-				  EXTI->PR |= Limit_Switch[Y_LIMIT_MAX].pinNumber;
+
 		  }
 		  else if (GPIO_Pin == Limit_Switch[Y_LIMIT_MIN].pinNumber)
 		  {
@@ -224,7 +180,7 @@ void LimitSwitch_trig(uint16_t GPIO_Pin)
 
 				  Limit_Switch[Y_LIMIT_MIN].CurrentState = !HAL_GPIO_ReadPin (Limit_Switch[Y_LIMIT_MIN].Port, Limit_Switch[Y_LIMIT_MIN].pinNumber);
 			     Limit_Switch[Y_LIMIT_MIN].millis_time = HAL_GetTick ();
-				  EXTI->PR |= Limit_Switch[Y_LIMIT_MIN].pinNumber;
+
 		  }
 
 }
