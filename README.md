@@ -7,5 +7,9 @@ FW working and tested with standard DirectX Force feedback support games (P3D, M
 
 I have make my owner Configuration Program for monitor, test and adjust Device to work.
 
+Here is video clip real Yoke working
+
+https://youtu.be/ubKVj28USQ4
+
 RGDS.
 
