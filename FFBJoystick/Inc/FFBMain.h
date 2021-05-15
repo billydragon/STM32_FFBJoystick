@@ -92,6 +92,7 @@ extern "C"
 #define REPORT_JOYSTICK_DATA	0x02
 #define AXIS_BACKWARD_X   		1000
 #define AXIS_BACKWARD_Y   		600
+#define ENDSTOP_ZONE				5
 
 #define MIN_DAC_OUT_VOLT		0
 #define MAX_DAC_OUT_VOLT		10000
@@ -135,7 +136,7 @@ typedef struct //PID state
   void Send_Debug_Report();
   void findCenter_Auto();
 
-  void Correct_Joystick_Positions(int axis_num, int32_t targetPosition);
+  //void Correct_Joystick_Positions(int axis_num, int32_t targetPosition);
   float AutoCenter_spring(uint8_t ax);
 
 #endif /* INC_FFBMAIN_H_ */

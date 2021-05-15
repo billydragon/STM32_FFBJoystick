@@ -317,15 +317,15 @@ else
    	case USB_EFFECT_INERTIA://10
 
    			setInertiaFilter(axis);
-   			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration) * 4.00f;
+   			metric = InertiaFilterLp[axis]->process(_effect_params.inertiaAcceleration) * 6.0f;
    			angle_ratio = rotateConditionForce ? angle_ratio : 1.0;
-   			if (_effect_params.frictionPositionChange < 0)
+   			if (_effect_params.inertiaAcceleration < 0 &&  _effect_params.frictionPositionChange < 0)
    			{
-   				force =  ConditionForceCalculator(effect, abs(metric), 0.50f, condition) * angle_ratio * _gains.inertiaGain;
+   				force =  ConditionForceCalculator(effect, abs(metric), 0.55f, condition) * angle_ratio * _gains.inertiaGain;
    			}
-   			else if ( _effect_params.frictionPositionChange > 0)
+   			else if ( _effect_params.inertiaAcceleration < 0 && _effect_params.frictionPositionChange > 0)
    			{
-					force =  -1 *  ConditionForceCalculator(effect, abs(metric), 0.50f, condition) * angle_ratio * _gains.inertiaGain;
+					force =  -1 *  ConditionForceCalculator(effect, abs(metric), 0.55f, condition) * angle_ratio * _gains.inertiaGain;
 				}
 
    			//printf("Inertia: M: %f, F: %ld\n", metric, force);
