@@ -252,7 +252,6 @@ void Update_Encoder_Axis(int32_t * tempForce)
 		 if(pidReportHandler.FFB_Active == true)
 			tempForce[X_AXIS] *= 0.1;
 
-		 Joystick.setXAxis (constrain(encoder.axis[X_AXIS].current_Position,encoder.axis[X_AXIS].minValue,encoder.axis[X_AXIS].minValue));
 
 	      encoder.updatePosition (Y_AXIS);
 
@@ -272,7 +271,9 @@ void Update_Encoder_Axis(int32_t * tempForce)
 
 	  if(pidReportHandler.FFB_Active == true)
 	  			tempForce[Y_AXIS] *= 0.25;
-	  Joystick.setYAxis (constrain(encoder.axis[Y_AXIS].current_Position,encoder.axis[Y_AXIS].minValue,encoder.axis[Y_AXIS].minValue));
+
+	  	 Joystick.setXAxis (constrain(encoder.axis[X_AXIS].current_Position,encoder.axis[X_AXIS].minValue,encoder.axis[X_AXIS].maxValue));
+	  	 Joystick.setYAxis (constrain(encoder.axis[Y_AXIS].current_Position,encoder.axis[Y_AXIS].minValue,encoder.axis[Y_AXIS].maxValue));
 
 }
 
@@ -395,6 +396,7 @@ void start_joystick ()
 #endif
 
 	   Update_Encoder_Axis(_tempforce);
+
 
 	   SetEffects();
 
@@ -540,8 +542,8 @@ float AutoCenter_spring(uint8_t ax)
 		{
 			tempforce = (encoder.axis[ax].current_Position - deadband)  * 2.0f * gain[ax].springGain/255;
 		}
-		tempforce += encoder.axis[ax].current_Speed  * 1.5f * gain[ax].damperGain /255;
-		tempforce += encoder.axis[ax].position_Changed  * 3.0f * gain[ax].frictionGain /255;
+		tempforce += encoder.axis[ax].current_Speed  * 1.3f * gain[ax].damperGain /255;
+		tempforce += encoder.axis[ax].position_Changed  * 2.2f * gain[ax].frictionGain /255;
 
 		tempforce = -constrain(tempforce, -32767, 32767);
 		return tempforce;
