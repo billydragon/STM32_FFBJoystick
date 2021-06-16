@@ -535,15 +535,15 @@ float AutoCenter_spring(uint8_t ax)
 		encoder.Update_Metric_By_Time(ax);
 		if(encoder.axis[ax].current_Position < -deadband)
 		{
-			tempforce = (encoder.axis[ax].current_Position + deadband)  * 2.0f * gain[ax].springGain/255;
+			tempforce = (encoder.axis[ax].current_Position + deadband)  * 2.7f * gain[ax].springGain/255;
 
 		}
 		else if(encoder.axis[ax].current_Position > deadband)
 		{
-			tempforce = (encoder.axis[ax].current_Position - deadband)  * 2.0f * gain[ax].springGain/255;
+			tempforce = (encoder.axis[ax].current_Position - deadband)  * 2.7f * gain[ax].springGain/255;
 		}
-		tempforce += encoder.axis[ax].current_Speed  * 1.3f * gain[ax].damperGain /255;
-		tempforce += encoder.axis[ax].position_Changed  * 2.2f * gain[ax].frictionGain /255;
+		tempforce += encoder.axis[ax].current_Speed  * 3.0f * gain[ax].damperGain /255;
+		//tempforce += encoder.axis[ax].position_Changed  * 2.2f * gain[ax].frictionGain /255;
 
 		tempforce = -constrain(tempforce, -32767, 32767);
 		return tempforce;

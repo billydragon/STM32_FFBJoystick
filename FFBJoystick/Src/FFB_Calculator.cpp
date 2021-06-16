@@ -27,11 +27,6 @@ uint32_t cfFilter_f = calcfrequency/2; // 500 = off
 const float cfFilter_q = 0.8;
 
 
-//Biquad DamperFilterLp(BiquadType::lowpass, (float)damper_f / (float)calcfrequency, damper_q, (float)0.0);
-//Biquad InertiaFilterLp(BiquadType::lowpass, (float)inertia_f / (float)calcfrequency, inertia_q, (float)0.0);
-//Biquad FrictionFilterLp(BiquadType::lowpass, (float)friction_f / (float)calcfrequency, friction_q, (float)0.0);
-//Biquad ConstantFilterLp(BiquadType::lowpass, (float)cfFilter_f / (float)calcfrequency, cfFilter_q, (float)0.0);
-
 Biquad * DamperFilterLp[FFB_AXIS_COUNT];
 Biquad * InertiaFilterLp[FFB_AXIS_COUNT];
 Biquad * FrictionFilterLp[FFB_AXIS_COUNT];
@@ -197,13 +192,13 @@ void forceCalculator (int32_t *forces)
       if ((effect.state == MEFFECTSTATE_PLAYING) && ((effect.elapsedTime <= effect.duration)
 	      || (effect.duration == USB_DURATION_INFINITE))  && !pidReportHandler.devicePaused)
     	  {
-			  if (effect.enableAxis == DIRECTION_ENABLE || effect.enableAxis & X_AXIS_ENABLE)
+			  if (effect.enableAxis == DIRECTION_ENABLE || (effect.enableAxis & X_AXIS_ENABLE))
 				{
 				  forces[X_AXIS] += (int32_t) (getEffectForce (effect, m_gains[X_AXIS], m_effect_params[X_AXIS], X_AXIS));
 
 				}
 
-			  if (effect.enableAxis == DIRECTION_ENABLE || effect.enableAxis & Y_AXIS_ENABLE)
+			  if (effect.enableAxis == DIRECTION_ENABLE || (effect.enableAxis & Y_AXIS_ENABLE))
 				{
 				  forces[Y_AXIS] += (int32_t) (getEffectForce (effect, m_gains[Y_AXIS], m_effect_params[Y_AXIS], Y_AXIS));
 
@@ -587,7 +582,7 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
   float negativeSaturation;
   float positiveSaturation;
   float positiveCoefficient;
-
+  int32_t pos = encoder.axis[axis].current_Position;
   deadBand = effect.conditions[axis].deadBand;
   cpOffset = effect.conditions[axis].cpOffset;
   negativeCoefficient = effect.conditions[axis].negativeCoefficient;
@@ -612,17 +607,19 @@ int32_t ConditionForceCalculator (volatile TEffectState &effect, float metric, f
     else return 0;
 
 #else
-	  if (metric < (cpOffset - deadBand))
+	  //if (metric < (cpOffset - deadBand))
+		  if ( abs(pos - cpOffset) < deadBand)
 	      {
 				  tempForce = (metric -  (cpOffset - deadBand)) * negativeCoefficient * scale;
 				  tempForce = constrain(tempForce,-negativeSaturation,positiveSaturation);
 	      }
-	  else if (metric > (cpOffset + deadBand))
+	  //else if (metric > (cpOffset + deadBand))
+		  else
 	      {
 				  tempForce = (metric -  (cpOffset + deadBand)) * positiveCoefficient * scale;
 		  		  tempForce = constrain(tempForce,-negativeSaturation,positiveSaturation);
 	      }
-	  else return 0;
+	  //else return 0;
 #endif
 
 	  tempForce = -tempForce * (1 + effect.gain) / 10000;
